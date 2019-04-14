@@ -1,0 +1,4 @@
+- add scripts that verify that the installation is correct
+- More installation steps are probably necessary
+
+For both, see https://vocon-it.com/2019/01/08/kubernetes-automatic-tls-certificates-with-lets-encrypt/#Step_1_Installing_cert-manager
