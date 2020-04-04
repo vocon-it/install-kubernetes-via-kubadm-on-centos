@@ -1,3 +1,8 @@
+
+kubeadm version -o short \
+  && echo "INFO: kubeadm is already installed. Skipping this step..." \
+  && exit 0
+
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
