@@ -1,7 +1,6 @@
 
 sudo sysctl net.bridge.bridge-nf-call-iptables=1 \
   && sudo kubectl apply -f "https://cloud.weave.works/k8s/v1.10/net.yaml?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-  #&& sudo kubectl apply -f "https://cloud.weave.works/k8s/v1.10/net.yaml"
 
 
 # Check, whether node is ready:
