@@ -1,12 +1,4 @@
-
-# reset kubeadm and firewall rules, if it was already initialized:
-if [ "$1" == "--reset" ]; then
-  answer=yes
-  read -t 10 -p "This will reset kubeadm and all firewall rules. Continue? ($answer) > " a
-  if [ "$answer" == "y" -o "$answer" == "yes" ]; then
-    sudo kubeadm reset && sudo iptables -F && sudo iptables -t nat -F && sudo iptables -t mangle -F && sudo iptables -X && bash 3_create_iptables_entries.sh
-  fi
-fi
+#!/usr/bin/env bash
 
 sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 --dry-run \
   && sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 \

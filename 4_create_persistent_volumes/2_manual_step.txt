@@ -2,7 +2,7 @@
 sudo su -
 cat $HOME/.kube sudo
 
-# output simimar to (credentials removed)
+# output similar to (credentials removed)
 apiVersion: v1
 clusters:
 - cluster:

@@ -1,5 +1,6 @@
 
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
+NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 
 # create template
 cat > persistentVolume.yaml.tmpl << 'EOF'
@@ -37,7 +38,7 @@ if [ "$DISK" != "" ]; then
 fi
 
 export NODE=$(hostname)
-for i in $(seq 1 100);
+for i in $(seq 1 $NUMBER_OF_VOLUMES);
 do
   export i=$i
 
