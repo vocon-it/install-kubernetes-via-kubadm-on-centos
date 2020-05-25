@@ -13,7 +13,9 @@ EOF
 sudo setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
-sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+KUBERNETES_VERISON=1.18.2-0.x86_64
+
+sudo yum install -y kubelet-${KUBERNETES_VERISON} kubeadm-${KUBERNETES_VERISON} kubectl-${KUBERNETES_VERISON} --disableexcludes=kubernetes
 
 sudo systemctl enable kubelet \
   && sudo systemctl start kubelet
