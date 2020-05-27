@@ -1,3 +1,8 @@
+
+docker --version \
+  && echo "INFO: docker is already installed. Skipping this step..." \
+  && exit 0
+
 # install docker
 yum check-update
 
