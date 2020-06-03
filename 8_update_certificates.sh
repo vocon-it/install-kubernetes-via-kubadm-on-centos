@@ -7,21 +7,22 @@
 #[ "$(id -u)" != "0" ] && echo "$0 must be run as root. Exiting..." && exit 1
 
 sudo echo test 2>/dev/null 1>/dev/null || alias sudo='$@'
+DATETIME=$(date '+%Y-%m-%d--%H-%M-%S')
 
 # Detect own IP address and check that it is a correct IPv4 address:
 API_IP=$(sudo /sbin/ifconfig eth0 | grep -v inet6 | grep inet | awk '{print $2}') \
   && echo "$API_IP" | egrep -v "^[1-9][0-9]{0,2}\.[1-9][0-9]{0,2}.[1-9][0-9]{0,2}.[1-9][0-9]{0,2}$" \
   && echo "ERROR: could not find IP address. Exiting ..." && exit 1
 
-# Create backup of the Certificates:
-sudo mkdir -p /root/kubernetes-pki.bak \
-  && sudo mv /etc/kubernetes/pki/{apiserver.crt,apiserver-etcd-client.key,apiserver-kubelet-client.crt,front-proxy-ca.crt,front-proxy-client.crt,front-proxy-client.key,front-proxy-ca.key,apiserver-kubelet-client.key,apiserver.key,apiserver-etcd-client.crt} /root/kubernetes-pki.bak/
+# Move the old folder contents out of the way (otherwise the next step will fail):
+sudo mv /etc/kubernetes/pki /etc/kubernetes/pki.bak-${DATETIME}
 
 # Create new Certificates:
 sudo kubeadm init phase certs all --apiserver-advertise-address $API_IP
 
 # Create Backup of the old configurations:
-sudo mv /etc/kubernetes/{admin.conf,controller-manager.conf,kubelet.conf,scheduler.conf} /root/kubernetes-pki.bak/
+sudo mkdir -p /root/kubernetes-pki.bak-${DATETIME} \
+  && sudo mv /etc/kubernetes/{admin.conf,controller-manager.conf,kubelet.conf,scheduler.conf} /root/kubernetes-pki.bak-${DATETIME}/
 
 # Create new configuration files:
 sudo kubeadm init phase kubeconfig all \
