@@ -14,7 +14,7 @@ API_IP=$(sudo /sbin/ifconfig eth0 | grep -v inet6 | grep inet | awk '{print $2}'
   && echo "ERROR: could not find IP address. Exiting ..." && exit 1
 
 # Create backup of the Certificates:
-sudo mkdir -p /root/kubernetes-pki.bak
+sudo mkdir -p /root/kubernetes-pki.bak \
   && sudo mv /etc/kubernetes/pki/{apiserver.crt,apiserver-etcd-client.key,apiserver-kubelet-client.crt,front-proxy-ca.crt,front-proxy-client.crt,front-proxy-client.key,front-proxy-ca.key,apiserver-kubelet-client.key,apiserver.key,apiserver-etcd-client.crt} /root/kubernetes-pki.bak/
 
 #cd /etc/kubernetes/pki/ \
