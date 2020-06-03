@@ -33,6 +33,6 @@ sudo kubeadm init phase kubeconfig all \
 
 
 # reboot needed:
-a=no
-read -p "A reboot is needed. Rebooting now? (yes|no) > " a
-[ "$(echo $a | cut -c 1 | awk '{print tolower($0)}')" == "y" ] && sudo reboot
+ANSWER=no
+read -p "A reboot is needed. Rebooting now? (yes|no) > " ANSWER
+[ "$(echo $ANSWER | cut -c 1 | awk '{print tolower($0)}')" == "y" ] && sudo reboot
