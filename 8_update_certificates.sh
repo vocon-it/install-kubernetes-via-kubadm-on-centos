@@ -4,7 +4,7 @@
 
 # TODO: create story for distributing .kube configs to all kube clients
 # TODO: run this as non-root using sudo
-[ "$(id -u)" != "0" ] && echo "$0 must be run as root. Exiting..." && exit 1
+#[ "$(id -u)" != "0" ] && echo "$0 must be run as root. Exiting..." && exit 1
 
 sudo echo test 2>/dev/null 1>/dev/null || alias sudo='$@'
 
@@ -31,7 +31,7 @@ sudo mv /etc/kubernetes/{admin.conf,controller-manager.conf,kubelet.conf,schedul
 sudo kubeadm init phase kubeconfig all \
   && mkdir -p $HOME/.kube \
   && sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config \
-  && sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  && sudo chown $(id -u):$(id -g) $HOME/.kube/config \
   && sudo mkdir -p /root/.kube \
   && sudo cp /etc/kubernetes/admin.conf /root/.kube/config
 
