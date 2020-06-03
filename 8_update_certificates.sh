@@ -17,10 +17,6 @@ API_IP=$(sudo /sbin/ifconfig eth0 | grep -v inet6 | grep inet | awk '{print $2}'
 sudo mkdir -p /root/kubernetes-pki.bak \
   && sudo mv /etc/kubernetes/pki/{apiserver.crt,apiserver-etcd-client.key,apiserver-kubelet-client.crt,front-proxy-ca.crt,front-proxy-client.crt,front-proxy-client.key,front-proxy-ca.key,apiserver-kubelet-client.key,apiserver.key,apiserver-etcd-client.crt} /root/kubernetes-pki.bak/
 
-#cd /etc/kubernetes/pki/ \
-#  && mkdir -p ~/kubernetes-pki.bak \
-#  && mv {apiserver.crt,apiserver-etcd-client.key,apiserver-kubelet-client.crt,front-proxy-ca.crt,front-proxy-client.crt,front-proxy-client.key,front-proxy-ca.key,apiserver-kubelet-client.key,apiserver.key,apiserver-etcd-client.crt} ~/kubernetes-pki.bak/ \
-
 # Create new Certificates:
 sudo kubeadm init phase certs all --apiserver-advertise-address $API_IP
 
