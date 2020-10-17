@@ -1,7 +1,13 @@
 
-KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.18.2-0.x86_64}
-KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.18.2-0.x86_64}
-KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.18.2-0.x86_64}
+#KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.18.2-0.x86_64}
+#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.18.2-0.x86_64}
+#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.18.2-0.x86_64}
+
+
+# try with latest:
+KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
+KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
+KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
 
 if kubeadm version -o short; then
   echo "INFO: kubeadm is already installed. Skipping this step..." \
