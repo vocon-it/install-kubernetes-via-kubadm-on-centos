@@ -29,8 +29,7 @@ EOF
   
   sudo yum install -y ${KUBELET_VERSION} ${KUBEADM_VERSION} ${KUBECTL_VERSION} --disableexcludes=kubernetes
   
-  sudo systemctl enable kubelet \
-    && sudo systemctl start kubelet
+  sudo systemctl enable --now kubelet
   
   kubeadm version -o short
   
