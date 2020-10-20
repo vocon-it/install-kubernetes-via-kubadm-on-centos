@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Stop on Error
-#set -euxo pipefail
 set -e
 
 # Define sudo, if it does not yet exist:
@@ -12,11 +11,11 @@ sudo docker --version \
   && echo "INFO: docker is already installed. Skipping this step..." \
   || source 1_install_docker.sh
 
-exit 0
-
 echo "--- INSTALL KUBEADM, IF NEEDED ---"
 kubeadm version -o short || \
   bash 2_install_kubeadm/1_install_kubeadm.sh
+
+exit 0
 
 echo "--- RESET KUBEADM ---"
 bash 2_install_kubeadm/2_reset_kubeadm.sh || false
