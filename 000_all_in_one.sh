@@ -9,7 +9,7 @@ sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 echo "--- INSTALL DOCKER, IF NEEDED ---"
 sudo docker --version \
   && echo "INFO: docker is already installed. Skipping this step..." \
-  || source 1_install_docker_18.06.sh
+  || bash 1_install_docker_18.06.sh
 
 echo "--- INSTALL KUBEADM, IF NEEDED ---"
 kubeadm version -o short \
