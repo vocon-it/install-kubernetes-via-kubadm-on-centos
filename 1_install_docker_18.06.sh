@@ -1,16 +1,14 @@
 
-docker --version \
-  && echo "INFO: docker is already installed. Skipping this step..." \
-  && exit 0
-
 # install docker
+
+# Exit on Error
+set -e
+
+sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
+
 yum check-update
 
-# install latest docker: skipped in favor of the installation of v18.06 below
-#curl -fsSL https://get.docker.com/ | sh
-
 # install docker v 18.06, which is compatible with latest kubectl 
-sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
 sudo tee /etc/yum.repos.d/docker.repo <<-'EOF' 
 [docker-ce-edge]
@@ -35,3 +33,5 @@ sudo systemctl enable docker
 
 echo 'Docker should be installed now. Try with "sudo docker search hello".'
 echo 'After logout and login again, "sudo" will not be needed anymore'
+
+sudo docker --version
