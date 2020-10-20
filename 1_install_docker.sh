@@ -1,37 +1,64 @@
 
-docker --version \
-  && echo "INFO: docker is already installed. Skipping this step..." \
-  && exit 0
+# Based on the official documentation (2020-10-20) on https://kubernetes.io/docs/setup/production-environment/container-runtimes/
+#   --> chapter: Docker
+#   --> Tab: CentOS/RHEL 7.4+
 
-# install docker
-yum check-update
+# +The + sign on the comment mark deviations/additions from the official documentation
 
-# install latest docker: skipped in favor of the installation of v18.06 below
-#curl -fsSL https://get.docker.com/ | sh
+# +Versions
+CONTAINERD_VERSION=${CONTAINERD_VERSION:=1.2.13}
+DOCKER_VERSION=${DOCKER_VERSION:=19.03.11}
 
-# install docker v 18.06, which is compatible with latest kubectl 
-sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
-sudo tee /etc/yum.repos.d/docker.repo <<-'EOF' 
-[docker-ce-edge]
-name=Docker CE Edge - $basearch
-baseurl=https://download.docker.com/linux/centos/7/$basearch/edge
-enabled=1
-gpgcheck=1
-gpgkey=https://download.docker.com/linux/centos/gpg
+# +Update
+sudo yum check-update
+
+# (Install Docker CE)
+## Set up the repository
+### Install required packages
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+
+## Add the Docker repository
+sudo yum-config-manager --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+
+## Install Docker CE
+sudo yum update -y && sudo yum install -y \
+  containerd.io-${CONTAINERD_VERSION} \
+  docker-ce-${DOCKER_VERSION} \
+  docker-ce-cli-${DOCKER_VERSION}
+
+## Create /etc/docker
+sudo mkdir /etc/docker
+
+# Set up the Docker daemon
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
 EOF
 
-sudo yum install -y docker-ce-18.06.1.ce-3.el7.x86_64 
+sudo mkdir -p /etc/systemd/system/docker.service.d
 
 # allow sudo rights of docker service:
 sudo usermod -aG docker $(whoami)
 
-# start docker now:
+# Start docker now:
 sudo systemctl start docker
 sudo systemctl status docker
 
-# start docker automatically after boot:
+# Start docker automatically after boot:
 sudo systemctl enable docker
 
 echo 'Docker should be installed now. Try with "sudo docker search hello".'
 echo 'After logout and login again, "sudo" will not be needed anymore'
+
+sudo docker --version

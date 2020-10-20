@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
 
+# Stop on Error
 set -euxo pipefail
 
-# INSTALL DOCKER IF NEEDED
-BOOTSTRAP_BRANCH=dev2-2-disable-web-access
-docker --version || \
-  curl https://raw.githubusercontent.com/oveits/bootstrap-centos/${BOOTSTRAP_BRANCH}/4_install_docker.sh \
-  | bash -
+# Define sudo, if it does not yet exist:
+sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
-# INSTALL KUBEADM IF NEEDED
+echo "--- INSTALL DOCKER, IF NEEDED ---"
+sudo docker --version \
+  && echo "INFO: docker is already installed. Skipping this step..." \
+  || source 1_install_docker.sh
+
+exit 0
+
+echo "--- INSTALL KUBEADM, IF NEEDED ---"
 kubeadm version -o short || \
   bash 2_install_kubeadm/1_install_kubeadm.sh
 
-# RESET KUBEADM
+echo "--- RESET KUBEADM ---"
 bash 2_install_kubeadm/2_reset_kubeadm.sh || false
 
-# INIT KUBEADM
+echo "--- INIT KUBEADM ---"
 bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
 
-# DEPLOY OVERLAY NETWORK
+echo "--- DEPLOY OVERLAY NETWORK ---"
 bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
 
-# UNTAINT MASTER
+echo "--- UNTAINT MASTER ---"
 bash 2_install_kubeadm/5_untaint_master.sh || false
 
 # CREATE PERSISTENT VOLUMES 
@@ -30,7 +35,7 @@ bash 2_install_kubeadm/5_untaint_master.sh || false
 #NUMBER_OF_VOLUMES=100 \
 #bash 4_create_persistent_volumes/3_add_local_volumes.sh 
 
-# KUBE ALIASES AND FUNCTIONS
+echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
 bash 8_kube_aliases_and_autocompletion.sh
 
 
