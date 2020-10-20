@@ -12,13 +12,14 @@ sudo docker --version \
   || source 1_install_docker.sh
 
 echo "--- INSTALL KUBEADM, IF NEEDED ---"
-kubeadm version -o short || \
-  bash 2_install_kubeadm/1_install_kubeadm.sh
-
-exit 0
+kubeadm version -o short \
+  && echo "INFO: kubeadm is already installed. Skipping this step..." \
+  || bash 2_install_kubeadm/2_install_kubeadm.sh
 
 echo "--- RESET KUBEADM ---"
 bash 2_install_kubeadm/2_reset_kubeadm.sh || false
+
+exit 0
 
 echo "--- INIT KUBEADM ---"
 bash 2_install_kubeadm/3_initialize_kubeadm.sh || false

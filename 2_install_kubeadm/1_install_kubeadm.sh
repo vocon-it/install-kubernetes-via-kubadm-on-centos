@@ -1,20 +1,20 @@
 
 # Official documentation: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
 # --> Tab: CentOS, RHEL or Fedora
-# This file reflects the status of 2020-10-20 (v19.3)
+# This file reflects the status of 2020-10-20 (v1.19.3)
 
 # Exit on Error
 set -e
 
-# latest tested versions:
-#KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.18.2-0.x86_64}
-#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.18.2-0.x86_64}
-#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.18.2-0.x86_64}
-
 # try with latest:
-KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
-KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
-KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
+#KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
+#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
+#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
+
+# latest tested versions:
+KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.19.3-0.x86_64}
+KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.19.3-0.x86_64}
+KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.19.3-0.x86_64}
 
 echo "--- Letting iptables see bridged traffic ---"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
