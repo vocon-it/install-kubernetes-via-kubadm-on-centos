@@ -11,7 +11,7 @@ yum check-update
 # install docker v 18.06, which is compatible with latest kubectl 
 
 echo "--- Add the Docker repository ---"
-sudo tee /etc/yum.repos.d/docker.repo <<-'EOF' || [ "$?" == "100" ]
+cat <<'EOF' | sudo tee /etc/yum.repos.d/docker.repo
 [docker-ce-edge]
 name=Docker CE Edge - $basearch
 baseurl=https://download.docker.com/linux/centos/7/$basearch/edge
