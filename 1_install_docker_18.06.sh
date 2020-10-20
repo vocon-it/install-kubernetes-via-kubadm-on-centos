@@ -10,6 +10,7 @@ yum check-update
 
 # install docker v 18.06, which is compatible with latest kubectl 
 
+echo "--- Add the Docker repository ---"
 sudo tee /etc/yum.repos.d/docker.repo <<-'EOF' 
 [docker-ce-edge]
 name=Docker CE Edge - $basearch
@@ -19,19 +20,21 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/centos/gpg
 EOF
 
+echo "--- Install Docker CE ---"
 sudo yum install -y docker-ce-18.06.1.ce-3.el7.x86_64 
 
-# allow sudo rights of docker service:
+echo "--- Allow sudo rights of docker service ---"
 sudo usermod -aG docker $(whoami)
 
-# start docker now:
+echo "--- Start docker now ---"
 sudo systemctl start docker
 sudo systemctl status docker
 
-# start docker automatically after boot:
+echo "--- Start docker automatically after boot ---"
 sudo systemctl enable docker
 
 echo 'Docker should be installed now. Try with "sudo docker search hello".'
 echo 'After logout and login again, "sudo" will not be needed anymore'
 
+echo "--- Print installed Docker Version ---"
 sudo docker --version
