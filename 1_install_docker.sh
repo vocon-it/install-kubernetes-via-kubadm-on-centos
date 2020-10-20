@@ -11,7 +11,7 @@ DOCKER_VERSION=${DOCKER_VERSION:=19.03.11}
 
 
 # +Update
-sudo yum check-update && echo successfully updated
+sudo yum check-update && echo successfully updated || true
 
 # (Install Docker CE)
 ## Set up the repository

@@ -6,7 +6,8 @@ set -e
 
 sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
-yum check-update
+# yum check-update often returns exit code 100. We do not want to react on that, so we return true
+sudo yum check-update || true
 
 # install docker v 18.06, which is compatible with latest kubectl 
 
@@ -20,33 +21,21 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/centos/gpg
 EOF
 
- #  echo "\$?=$?"
-
 echo "--- Install Docker CE ---"
 sudo yum install -y docker-ce-18.06.1.ce-3.el7.x86_64
 
- # echo "\$?=$?"   
-
 echo "--- Allow sudo rights of docker service ---"
 sudo usermod -aG docker $(whoami)
-
- # echo "\$?=$?"   
 
 echo "--- Start docker now ---"
 sudo systemctl start docker
 sudo systemctl status docker
 
- # echo "\$?=$?"   
-
 echo "--- Start docker automatically after boot ---"
 sudo systemctl enable docker
-
- # echo "\$?=$?"   
 
 echo 'Docker should be installed now. Try with "sudo docker search hello".'
 echo 'After logout and login again, "sudo" will not be needed anymore'
 
 echo "--- Print installed Docker Version ---"
 sudo docker --version
-
- # echo "\$?=$?"   
