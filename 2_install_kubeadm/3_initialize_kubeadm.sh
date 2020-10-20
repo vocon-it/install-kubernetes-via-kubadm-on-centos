@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# If you eant .kube to be created for a non-root user, then run this script as the non-root user:
+
 sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 --dry-run --ignore-preflight-errors=NumCPU \
   && sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU \
      | sudo tee /tmp/kubeinit.log \

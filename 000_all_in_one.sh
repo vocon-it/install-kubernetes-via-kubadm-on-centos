@@ -19,10 +19,10 @@ kubeadm version -o short \
 echo "--- RESET KUBEADM ---"
 bash 2_install_kubeadm/2_reset_kubeadm.sh || false
 
-exit 0
-
 echo "--- INIT KUBEADM ---"
 bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
+
+exit 0
 
 echo "--- DEPLOY OVERLAY NETWORK ---"
 bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
