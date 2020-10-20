@@ -11,27 +11,27 @@ DOCKER_VERSION=${DOCKER_VERSION:=19.03.11}
 
 
 # +Update
-sudo yum check-update
+sudo yum check-update && echo successfully updated
 
 # (Install Docker CE)
 ## Set up the repository
-### Install required packages
-sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+echo "--- Install required packages ---"
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2 && echo successfully installed utils
 
-## Add the Docker repository
+echo "--- Add the Docker repository ---"
 sudo yum-config-manager --add-repo \
-  https://download.docker.com/linux/centos/docker-ce.repo
+  https://download.docker.com/linux/centos/docker-ce.repo && echo successfully added docker repo
 
-## Install Docker CE
+echo "--- Install Docker CE ---"
 sudo yum update -y && sudo yum install -y \
   containerd.io-${CONTAINERD_VERSION} \
   docker-ce-${DOCKER_VERSION} \
   docker-ce-cli-${DOCKER_VERSION}
 
-## Create /etc/docker
+echo "--- Create /etc/docker ---"
 sudo mkdir /etc/docker
 
-# Set up the Docker daemon
+echo "--- Set up the Docker daemon ---"
 cat <<EOF | sudo tee /etc/docker/daemon.json
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
@@ -46,19 +46,21 @@ cat <<EOF | sudo tee /etc/docker/daemon.json
 }
 EOF
 
+echo "--- Add docker systemd folder ---"
 sudo mkdir -p /etc/systemd/system/docker.service.d
 
-# allow sudo rights of docker service:
+echo "--- Allow sudo rights of docker service ---"
 sudo usermod -aG docker $(whoami)
 
-# Start docker now:
+echo "--- Start docker now ---"
 sudo systemctl start docker
 sudo systemctl status docker
 
-# Start docker automatically after boot:
+echo "--- Start docker automatically after boot ---"
 sudo systemctl enable docker
 
 echo 'Docker should be installed now. Try with "sudo docker search hello".'
 echo 'After logout and login again, "sudo" will not be needed anymore'
 
+echo "--- Print installed Docker Version ---"
 sudo docker --version
