@@ -1,6 +1,6 @@
 
 
-set -e 
+set -e
 
 _NOTHING_TO_DO="Already installed. Nothing to do."
 

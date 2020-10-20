@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Stop on Error
-set -euxo pipefail
+#set -euxo pipefail
+set -e
 
 # Define sudo, if it does not yet exist:
 sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
