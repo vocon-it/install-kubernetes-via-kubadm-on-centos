@@ -13,7 +13,8 @@ sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network
   && sudo cp /etc/kubernetes/admin.conf /root/.kube/config
 
 if [ "$?" != 0 ]; then
-  echo "ERROR: operation failed. If kubeadm is initialized already and you want to re-initialize, try option --reset"  false
+  echo "ERROR: operation failed. If kubeadm is initialized already and you want to re-initialize, try option --reset"
+  false
 else
   true
 fi
