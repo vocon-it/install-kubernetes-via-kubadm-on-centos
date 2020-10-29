@@ -12,7 +12,7 @@ echo "---------------------------------"
 echo
 sudo docker --version \
   && echo "INFO: docker is already installed. Skipping this step..." \
-  || bash 1_install_docker_18.06.sh
+  || bash 1_install_docker.sh
 
 echo "----------------------------------"
 echo "--- INSTALL KUBEADM, IF NEEDED ---"
