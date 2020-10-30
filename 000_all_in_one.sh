@@ -1,32 +1,67 @@
 #!/usr/bin/env bash
 
-# INSTALL DOCKER IF NEEDED
-BOOTSTRAP_BRANCH=dev2-2-disable-web-access
-docker --version || \
-  curl https://raw.githubusercontent.com/oveits/bootstrap-centos/${BOOTSTRAP_BRANCH}/4_install_docker.sh \
-  | bash -
+# Stop on Error
+set -e
 
-# INSTALL KUBEADM IF NEEDED
-kubeadm version -o short || \
-  bash 2_install_kubeadm/1_install_kubeadm.sh
+# Define sudo, if it does not yet exist:
+sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
-# RESET KUBEADM
-bash 2_install_kubeadm/2_reset_kubeadm.sh
+echo "---------------------------------"
+echo "--- INSTALL DOCKER, IF NEEDED ---"
+echo "---------------------------------"
+echo
+sudo docker --version \
+  && echo "INFO: docker is already installed. Skipping this step..." \
+  || bash 1_install_docker.sh
 
-# INIT KUBEADM
-bash 2_install_kubeadm/3_initialize_kubeadm.sh
+echo "----------------------------------"
+echo "--- INSTALL KUBEADM, IF NEEDED ---"
+echo "----------------------------------"
+echo
+kubeadm version -o short \
+  && echo "INFO: kubeadm is already installed. Skipping this step..." \
+  || bash 2_install_kubeadm/1_install_kubeadm.sh
 
-# DEPLOY OVERLAY NETWORK
-bash 2_install_kubeadm/4_deploy_overlay_network.sh
+echo "---------------------"
+echo "--- RESET KUBEADM ---"
+echo "---------------------"
+echo
+bash 2_install_kubeadm/2_reset_kubeadm.sh || false
 
-# UNTAINT MASTER
-bash 2_install_kubeadm/5_untaint_master.sh
+echo "--------------------"
+echo "--- INIT KUBEADM ---"
+echo "--------------------"
+echo
+bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
 
-# CREATE PERSISTENT VOLUMES
-bash 4_create_persistent_volumes/1_storage_class.sh
-NUMBER_OF_VOLUMES=100 \
-bash 4_create_persistent_volumes/3_add_local_volumes.sh 
+echo "------------------------------"
+echo "--- DEPLOY OVERLAY NETWORK ---"
+echo "------------------------------"
+echo
+bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
 
+echo "----------------------"
+echo "--- UNTAINT MASTER ---"
+echo "----------------------"
+echo
+bash 2_install_kubeadm/5_untaint_master.sh || false
+
+# CREATE PERSISTENT VOLUMES 
+# ----- SWITCHED OFF -----
+#bash 4_create_persistent_volumes/1_storage_class.sh
+#NUMBER_OF_VOLUMES=100 \
+#bash 4_create_persistent_volumes/3_add_local_volumes.sh 
+
+echo "--------------------------------------"
+echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
+echo "--------------------------------------"
+echo
+bash 8_kube_aliases_and_autocompletion.sh
+
+echo "--------------------------------------"
+echo "--- FINISHED INSTALLING KUBERNETES ---"
+echo "--------------------------------------"
+echo
 # TODO: add other scripts
 
 
