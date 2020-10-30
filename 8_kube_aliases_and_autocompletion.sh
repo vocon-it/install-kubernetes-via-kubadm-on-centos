@@ -4,9 +4,13 @@ set -e
 
 _NOTHING_TO_DO="Already installed. Nothing to do."
 
-
+echo "--------------------------------------------------------------"
 echo "Checking for kubernetes aliases & functions in ${HOME}/.bashrc"
-cat ${HOME}/.bashrc | grep 'alias k=' >/dev/null && echo "${_NOTHING_TO_DO}" || cat <<'EOF' | tee -a ${HOME}/.bashrc
+echo "--------------------------------------------------------------"
+
+cat ${HOME}/.bashrc | grep 'alias k=' >/dev/null \
+  && echo "${_NOTHING_TO_DO}" \
+  || cat <<'EOF' | tee -a ${HOME}/.bashrc
 
 # Kubernetes aliases & functions
 alias k=kubectl
