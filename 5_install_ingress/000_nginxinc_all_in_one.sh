@@ -37,19 +37,6 @@ echo "POD does not seem to start. Showing log."
 POD=$(kubectl get pod -n nginx-ingress | grep nginx-ingress | head -1 | awk '{print $1}')
 kubectl -n nginx-ingress describe pod $POD | grep -A 100 "Events:"
 
+echo "If you reach here, then something went wrong in $0"
 exit 1
-
-###########
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/common/ns-and-sa.yaml
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/rbac/rbac.yaml
-# if rbac is missing, we get the error in the nginx controller pod:
-# Error when getting IngressClass nginx: ingressclasses.networking.k8s.io "nginx" is forbidden: User "system:serviceaccount:nginx-ingress:nginx-ingress" cannot get resource "ingressclasses" in API group "networking.k8s.io" at the cluster scope
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/common/default-server-secret.yaml
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/common/nginx-config.yaml
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/common/ingress-class.yaml
-# if ingress-class is missing, we get following error message:
-# Error when getting IngressClass nginx: ingressclasses.networking.k8s.io "nginx" not found
-# when applied, we gett following 
-# Warning: networking.k8s.io/v1beta1 IngressClass is deprecated in v1.19+, unavailable in v1.22+; use networking.k8s.io/v1 IngressClassList
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments/daemon-set/nginx-ingress.yaml
 
