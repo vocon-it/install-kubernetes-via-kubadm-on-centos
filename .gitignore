@@ -2,3 +2,4 @@
 5_install_ingress/default-certificate
 *.tar.gz
 linux*
+.idea
