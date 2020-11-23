@@ -3,3 +3,4 @@
 *.tar.gz
 linux*
 .idea
+get_helm.sh
