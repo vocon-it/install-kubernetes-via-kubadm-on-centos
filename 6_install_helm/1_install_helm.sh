@@ -1,8 +1,7 @@
 
-if ! helm version > /dev/null; then
-  export DESIRED_VERSION=v3.4.1
-  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
-    && bash ./get_helm.sh \
-    && rm get_helm.sh
+if ! helm version; then
+  curl -s -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.12.1-linux-amd64.tar.gz \
+    && tar -zxvf helm.tar.gz \
+    && cp -p -f linux-amd64/helm /usr/local/bin/ \
+    && helm init
 fi
-helm version
