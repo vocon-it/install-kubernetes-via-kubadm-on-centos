@@ -52,6 +52,12 @@ bash 2_install_kubeadm/5_untaint_master.sh || false
 #NUMBER_OF_VOLUMES=100 \
 #bash 4_create_persistent_volumes/3_add_local_volumes.sh 
 
+echo "----------------------------"
+echo "--- INSTALL CERT-MANAGER ---"
+echo "----------------------------"
+echo
+bash 7_install_cert_manager/1_install_cert-manager.sh
+
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
 echo "--------------------------------------"

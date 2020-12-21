@@ -1,5 +1,0 @@
-- add scripts that verify that the installation is correct
-- More installation steps are probably necessary
-
-For both, see https://vocon-it.com/2019/01/08/kubernetes-automatic-tls-certificates-with-lets-encrypt/#Step_1_Installing_cert-manager
-see also the many scripts I had needed for the Wordpress installation on https://github.com/oveits/kubernetes-install-wordpress/tree/develop/5_create_letsencrypt
