@@ -1,8 +1,9 @@
 # Installing Kubernetes on CentOS
 
 ```
-[ -d install-kubernetes-via-kubadm-on-centos ] && git clone https://github.com/vocon-it/install-kubernetes-via-kubadm-on-centos.git
+[ -d install-kubernetes-via-kubadm-on-centos ] || git clone https://github.com/vocon-it/install-kubernetes-via-kubadm-on-centos.git
 cd install-kubernetes-via-kubadm-on-centos/
+git checkout feature/CAAS-340-create-a-new-prod-cluster
 bash 000_all_in_one.sh
 ```
 
