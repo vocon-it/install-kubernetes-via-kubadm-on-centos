@@ -7,14 +7,17 @@
 set -e
 
 # try with latest:
-KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
-KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
-KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
+#KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
+#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
+#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
 
 # latest tested versions:
 #KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.19.3-0.x86_64}
 #KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.19.3-0.x86_64}
 #KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.19.3-0.x86_64}
+KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.20.1-0.x86_64}
+KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.20.1-0.x86_64}
+KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.20.1-0.x86_64}
 
 echo "--- Letting iptables see bridged traffic ---"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
