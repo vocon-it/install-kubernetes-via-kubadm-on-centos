@@ -2,8 +2,22 @@
 
 # If you eant .kube to be created for a non-root user, then run this script as the non-root user:
 
-sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 --dry-run --ignore-preflight-errors=NumCPU \
-  && sudo kubeadm init --kubernetes-version $(kubeadm version -o short) --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU \
+CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master}
+
+# prerequisite: switch on routing
+cat /proc/sys/net/ipv4/ip_forward | grep 1 || echo "1" | sudo tee cat /proc/sys/net/ipv4/ip_forward
+
+sudo kubeadm init \
+  --kubernetes-version $(kubeadm version -o short) \
+  --pod-network-cidr=10.244.0.0/16 \
+  --control-plane-endpoint=${CONTROL_PLANE_ENDPOINT} \
+  --ignore-preflight-errors=NumCPU \
+  --dry-run \
+  && sudo kubeadm init \
+    --kubernetes-version $(kubeadm version -o short) \
+    --pod-network-cidr=10.244.0.0/16 \
+    --control-plane-endpoint=${CONTROL_PLANE_ENDPOINT} \
+    --ignore-preflight-errors=NumCPU \
      | sudo tee /tmp/kubeinit.log \
   && echo "Note: the full initialization log can be found on /tmp/kubeinit.log" \
   && mkdir -p $HOME/.kube \
