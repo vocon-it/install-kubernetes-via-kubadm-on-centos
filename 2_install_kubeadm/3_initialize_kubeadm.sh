@@ -2,7 +2,10 @@
 
 # If you eant .kube to be created for a non-root user, then run this script as the non-root user:
 
-CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master}
+#APISERVER_ADVERTISE_ADDRESS=${APISERVER_ADVERTISE_ADDRESS:=$(hostname)}
+#  --apiserver-advertise-address=${APISERVER_ADVERTISE_ADDRESS} \
+
+CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname -f)}
 
 # prerequisite: switch on routing
 cat /proc/sys/net/ipv4/ip_forward | grep 1 || echo "1" | sudo tee cat /proc/sys/net/ipv4/ip_forward

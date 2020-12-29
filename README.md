@@ -5,7 +5,10 @@
   - [ ] [DNS] A records for each machine
   - [ ] [DNS] CNAME from master.xxx -> master1.<cluster>.vocon-it.com or the single machine vocon-xxxx.vocon-it.com
 - [ ] [DNS] Automated DNS records per CloudFlare API: create JIRA story
+- [ ] [/etc/hosts] Describe how to edit /etc/hosts (e.g. replace `127.0.0.1 <hostname> <hostname>>` by `127.0.0.1 <hostname>.<cluster>.vocon-it.com <hostname>>` 
+            and in case of a hostname=master1 optionally add a copied line with `master` instead of `master1` whose FQDN can be used as `CONTROL_PLANE_ENDPOINT`
 - [ ] [Cluster Support] Roles: master and/or slave
+- [ ] [Cluster Support] Describe how to add an agent node (as opposed to a control node)
 
 ```
 cd ~centos
