@@ -28,14 +28,8 @@ spec:
 EOF
 
 # detect external volumes. If found, use the last external volume in the list
-DISK=$(df | grep mnt | tail -n 1 | awk '{print $6}')
-if [ "$DISK" != "" ]; then
-  answer=yes
-  read -t 10 -p "External disk on mountpoint $DISK detected. Use this disk for creating volumes? ($answer) >" answer
-  if [ "${answer:0:1}" == "y" -o "${answer:0:1}" == "Y" ]; then
-    sudo ln -s $DISK /mnt/disk    
-  fi
-fi
+DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
+DISK=${DISK:=/mnt/disk}
 
 export NODE=$(hostname)
 for i in $(seq 1 $NUMBER_OF_VOLUMES);
@@ -45,13 +39,12 @@ do
   if [ "$CMD" == "apply" ]; then
     # create directory on the node, where the PODs will be located (current node in our case):
     DIRNAME="vol${i}"
-    sudo test -d /mnt/disk/$DIRNAME || sudo mkdir -p /mnt/disk/$DIRNAME 
-    sudo chcon -Rt svirt_sandbox_file_t /mnt/disk/$DIRNAME
-    sudo chmod 777 /mnt/disk/$DIRNAME
-  
-    # create persistentVolume
-    envsubst < persistentVolume.yaml.tmpl > persistentVolume.yaml
+    sudo test -d ${DISK}/$DIRNAME || sudo mkdir -p ${DISK}/$DIRNAME
+    sudo chcon -Rt svirt_sandbox_file_t ${DISK}/$DIRNAME
+    sudo chmod 777 ${DISK}/$DIRNAME
   fi
+  # create persistentVolume
+  cat persistentVolume.yaml.tmpl | envsubst > persistentVolume.yaml
   kubectl $CMD -f persistentVolume.yaml
 done    
 

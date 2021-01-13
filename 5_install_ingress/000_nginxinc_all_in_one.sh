@@ -3,8 +3,15 @@
 # Official Documentation: see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests
 
 #RELEASE=master
-RELEASE=release-1.9
+RELEASE=release-1.9 # Note: '1.9' is a moving target and it refers to 1.9.1, currently (as of 2021-01-03)
 RAW_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments"
+
+# choose the environment, where to deploy the NginX controller by choosing the KUBECONFIG file:
+DEPLOY_ON_ENVIRONMENT=${DEPLOY_ON_ENVIRONMENT:=local}
+toLower() {
+   sed -e 's/\(.*\)/\L\1/'
+}
+export KUBECONFIG=${KUBECONFIG:=$( [ "${DEPLOY_ON_ENVIRONMENT}" != "local" ] && echo ~/.kube/${DEPLOY_ON_ENVIRONMENT}-config | toLower || echo ~/.kube/config )}
 
 NAMESPACE_AND_SERVICEACCOUNT=common/ns-and-sa.yaml
 RBAC="rbac/rbac.yaml rbac/ap-rbac.yaml"

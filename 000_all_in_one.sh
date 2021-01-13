@@ -3,6 +3,24 @@
 # Stop on Error
 set -e
 
+NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
+
+# Roles
+hostname | grep master && MASTER=true || true
+hostname | grep node && AGENT=true || true
+[ "${MASTER}" == "" ] && [ "${AGENT}" == "" ]  && MASTER=true && AGENT=true || true
+
+echo "MASTER=${MASTER}"
+echo "AGENT=${AGENT}"
+
+export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master.prod.vocon-it.com}
+export API_NAME=master1.prod.vocon-it.com
+
+if [ "${MASTER}" == "true" ]; then
+  export API_NAME=${API_NAME:=$(hostname)}
+  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
+fi
+
 # Define sudo, if it does not yet exist:
 sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
@@ -32,7 +50,11 @@ echo "--------------------"
 echo "--- INIT KUBEADM ---"
 echo "--------------------"
 echo
-bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
+if [ "${MASTER}" == "true" ]; then
+  bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
+else
+  echo "The node is no master. Skipping this step."
+fi
 
 echo "------------------------------"
 echo "--- DEPLOY OVERLAY NETWORK ---"
@@ -44,13 +66,40 @@ echo "----------------------"
 echo "--- UNTAINT MASTER ---"
 echo "----------------------"
 echo
-bash 2_install_kubeadm/5_untaint_master.sh || false
+if [ "${MASTER}" == "true" ] && [ "${AGENT}" == "true" ]; then
+  bash 2_install_kubeadm/5_untaint_master.sh || false
+else
+  echo "The node is no master and agent. Skipping this step."
+fi
 
-# CREATE PERSISTENT VOLUMES 
-# ----- SWITCHED OFF -----
-#bash 4_create_persistent_volumes/1_storage_class.sh
-#NUMBER_OF_VOLUMES=100 \
-#bash 4_create_persistent_volumes/3_add_local_volumes.sh 
+echo "--------------------------------------"
+echo "--- ADD EXTERNAL VOLUME IF NEEDED  ---"
+echo "--------------------------------------"
+echo
+[ "${AGENT}" == "true" ] \
+  && echo "If needed: on Hetzner Cloud, add an XFS Vomume to the agent machine and perform the steps found on 'Show Configuration':" \
+  && echo 'Example:' \
+  && echo '   sudo mkfs.xfs -f  /dev/disk/by-id/scsi-0HC_Volume_8726516t' \
+  && echo '   sudo mkdir /mnt/prod-node-volume-nbg1-1-xfs' \
+  && echo '   sudo mount -o discard,defaults /dev/disk/by-id/scsi-0HC_Volume_8726516 /mnt/prod-node-volume-nbg1-1-xfs' \
+  && echo '   echo "/dev/disk/by-id/scsi-0HC_Volume_8726516 /mnt/prod-node-volume-nbg1-1-xfs xfs discard,nofail,defaults 0 0" | sudo tee -a /etc/fstab' \
+  && echo "Note the sudo commands and the sudo tee -a in the last command" \
+  && echo "Perform the adapted commands in a separate window. Press any key, when you are done..." \
+  && while true; do echo -n .; read -s -t 10 -a REPLY && break; done || true; echo
+
+echo "----------------------------------------------"
+echo "--- ADD KUBE PERSISTENT VOLUMES IF NEEDED  ---"
+echo "----------------------------------------------"
+echo
+if [ "${MASTER}" != "true" ] \
+  && [ "${AGENT}" == "true" ] \
+  && [ "${NUMBER_OF_VOLUMES}" != "" ] \
+  && [ "${NUMBER_OF_VOLUMES}" != "0" ]; then
+  bash 4_create_persistent_volumes/1_storage_class.sh \
+  && bash 4_create_persistent_volumes/3_add_local_volumes.sh
+else
+  true
+fi
 
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
@@ -59,9 +108,40 @@ echo
 bash 8_kube_aliases_and_autocompletion.sh
 
 echo "--------------------------------------"
+echo "--- MANUAL STEP: Join master      ---"
+echo "--------------------------------------"
+echo
+
+[ "${MASTER}" != "true" ] && [ "${AGENT}" == "true" ] \
+  && echo "Copy the kubeadm join command from the master:/tmp/kubeinit.log to the agent." \
+  && echo "You might have to add the master IP address to /etc/hosts for this to succeed." \
+  && echo "Perform this in a separate window. Press any key, when you are done..." \
+  && while true; do echo -n .; read -s -t 10 -a REPLY && break; done || true; echo
+
+
+echo "--------------------------------------"
+echo "--- MANUAL STEP: Copy .kube/config ---"
+echo "--------------------------------------"
+echo
+
+[ "${MASTER}" != "true" ] && [ "${AGENT}" == "true" ] \
+  && echo "Please copy centos@master1:.kube/config to the agent." \
+  && echo "Try:" \
+  && echo "$ scp centos@master1:.kube/config ~/.kube/" \
+  && echo "replace master1 to a reachable domain name or IP address of a master (e.g. master.prod.vocon-it.com)" \
+  && echo "Perform this in a separate window. Press any key, when you are done..." \
+  && while true; do echo -n .; read -s -t 10 -a REPLY && break; done || true; echo
+
+
+echo "--------------------------------------"
 echo "--- FINISHED INSTALLING KUBERNETES ---"
 echo "--------------------------------------"
 echo
+
+
+
+
+
 # TODO: add other scripts
 
 
