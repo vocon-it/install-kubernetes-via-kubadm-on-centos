@@ -23,7 +23,7 @@ do
 done
 
 if [ ! "${DEPLOYMENT_INFO}" -eq 3 ]; then
-  echo "CertManager Installation was not successful"
+  echo "Cert-manager installation was not successful. Exiting..."
   exit 1
 fi
 
