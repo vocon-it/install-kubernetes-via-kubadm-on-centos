@@ -2,6 +2,7 @@
 # Install NginX INC Controller 
 # Official Documentation: see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests
 
+[ "$1" == "-d" ] && CMD=delete || CMD=apply
 #RELEASE=master
 RELEASE=release-1.9 # Note: '1.9' is a moving target and it refers to 1.9.1, currently (as of 2021-01-03)
 RAW_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${RELEASE}/deployments"
@@ -25,9 +26,9 @@ for YAML in $ALL
 do
   if [ "${YAML}" == "daemon-set/nginx-ingress.yaml" ]; then
     curl -s "${RAW_URL}/${YAML}" | sed 's/terminationMessagePolicy: File/terminationMessagePolicy: FallbackToLogsOnError/' \
-     | kubectl apply -f -
+     | kubectl ${CMD} -f -
   else
-    kubectl apply -f "${RAW_URL}/${YAML}"
+    kubectl ${CMD} -f "${RAW_URL}/${YAML}"
   fi
 done
 

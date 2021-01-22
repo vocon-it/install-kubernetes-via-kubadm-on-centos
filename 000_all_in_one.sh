@@ -101,6 +101,12 @@ else
   true
 fi
 
+echo "----------------------------"
+echo "--- INSTALL CERT-MANAGER ---"
+echo "----------------------------"
+echo
+bash 7_install_cert_manager/1_install_cert-manager.sh
+
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
 echo "--------------------------------------"
