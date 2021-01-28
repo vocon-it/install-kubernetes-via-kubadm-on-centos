@@ -14,10 +14,8 @@ echo "MASTER=${MASTER}"
 echo "AGENT=${AGENT}"
 
 export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master.prod.vocon-it.com}
-export API_NAME=master1.prod.vocon-it.com
 
 if [ "${MASTER}" == "true" ]; then
-  export API_NAME=${API_NAME:=$(hostname)}
   export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
 fi
 
@@ -77,7 +75,7 @@ echo "--- ADD EXTERNAL VOLUME IF NEEDED  ---"
 echo "--------------------------------------"
 echo
 [ "${AGENT}" == "true" ] \
-  && echo "If needed: on Hetzner Cloud, add an XFS Vomume to the agent machine and perform the steps found on 'Show Configuration':" \
+  && echo "If needed: on Hetzner Cloud, add an XFS Vomume to the agent machine and perform the steps found on 'Show Configuration' on Hetzner Cloud:" \
   && echo 'Example:' \
   && echo '   sudo mkfs.xfs -f  /dev/disk/by-id/scsi-0HC_Volume_8726516t' \
   && echo '   sudo mkdir /mnt/prod-node-volume-nbg1-1-xfs' \

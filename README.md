@@ -9,6 +9,8 @@
             and in case of a hostname=master1 optionally add a copied line with `master` instead of `master1` whose FQDN can be used as `CONTROL_PLANE_ENDPOINT`
 - [ ] [Cluster Support] Roles: master and/or slave
 - [ ] [Cluster Support] Describe how to add an agent node (as opposed to a control node)
+- [ ] kns and k aliases for root user are not working yet, when running script 8_kube_aliases_and_autocompletion.sh
+- [ ] Integrate the execution of NginX Deployment into 000_all_in_one.sh
 
 ```
 cd ~centos
