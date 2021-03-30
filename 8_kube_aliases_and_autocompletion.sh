@@ -42,7 +42,13 @@ cat ${HOME}/.bashrc | grep 'source /usr/share/bash-completion/bash_completion' >
   || cat <<'EOF' | tee -a ${HOME}/.bashrc
 
 # bash completion general:
-type _init_completion >/dev/null || source /usr/share/bash-completion/bash_completion
+if type _init_completion >/dev/null 2>/dev/null; then
+  echo "bash completion already initialized; nothing to do..."
+else
+  echo "initializing bash completion (source /usr/share/bash-completion/bash_completion)"
+  source /usr/share/bash-completion/bash_completion \
+    || echo "Warning: error reading /usr/share/bash-completion/bash_completion"
+fi
 EOF
 
 echo "Installing bash completion for kubectl in .bashrc"
