@@ -36,7 +36,16 @@ sudo yum list installed | grep bash-completion >/dev/null \
   && echo "${_NOTHING_TO_DO}" \
   || sudo yum install -y bash-completion
 
-echo "Installing bash completion for kubectl"
+echo "Installing bash completion in .bashrc"
+cat ${HOME}/.bashrc | grep 'source /usr/share/bash-completion/bash_completion' >/dev/null \
+  && echo "${_NOTHING_TO_DO}" \
+  || cat <<'EOF' | tee -a ${HOME}/.bashrc
+
+# bash completion general:
+type _init_completion >/dev/null || source /usr/share/bash-completion/bash_completion
+EOF
+
+echo "Installing bash completion for kubectl in .bashrc"
 cat ${HOME}/.bashrc | grep 'source <(kubectl completion bash)' >/dev/null \
   && echo "${_NOTHING_TO_DO}" \
   || cat <<'EOF' | tee -a ${HOME}/.bashrc
@@ -46,7 +55,7 @@ source <(kubectl completion bash)
 EOF
 
 
-echo "Installing bash completion for alias k=kubectl"
+echo "Installing bash completion for alias k=kubectl in .bashrc"
 cat ${HOME}/.bashrc | grep 'source <(kubectl completion bash | sed' >/dev/null \
   && echo "${_NOTHING_TO_DO}" \
   || cat <<'EOF' | tee -a ${HOME}/.bashrc
