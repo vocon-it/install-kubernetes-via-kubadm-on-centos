@@ -32,7 +32,8 @@ EOF
 
 
 echo "Installing bash completion"
-sudo yum list installed | grep bash-completion >/dev/null \
+sudo echo hello >/dev/null 2>/dev/null || alias sudo="$@"
+yum list installed | grep bash-completion >/dev/null \
   && echo "${_NOTHING_TO_DO}" \
   || sudo yum install -y bash-completion
 
