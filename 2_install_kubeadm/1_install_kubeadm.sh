@@ -6,18 +6,31 @@
 # Exit on Error
 set -e
 
-# try with latest:
-#KUBELET_VERSION=${KUBELET_VERSION:=kubelet}
-#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm}
-#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl}
+sudo yum list installed | grep kubeadm && echo "kubeadm is already installed. You need do remove kubeadm first." && false
+
+if [ "KUBEADM_VERSION" != "" ]; then
+  KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-${KUBEADM_VERSION}-0.x86_64}
+  KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-${KUBEADM_VERSION}-0.x86_64}
+  KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-${KUBEADM_VERSION}-0.x86_64}
+else
+  # install latest:
+  KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet}
+  KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm}
+  KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl}
+fi
+
+echo "Installing ${KUBELET_PACKAGE}, ${KUBEADM_PACKAGE} and ${KUBECTL_PACKAGE}"
 
 # latest tested versions:
-#KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.19.3-0.x86_64}
-#KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.19.3-0.x86_64}
-#KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.19.3-0.x86_64}
-KUBELET_VERSION=${KUBELET_VERSION:=kubelet-1.20.1-0.x86_64}
-KUBEADM_VERSION=${KUBEADM_VERSION:=kubeadm-1.20.1-0.x86_64}
-KUBECTL_VERSION=${KUBECTL_VERSION:=kubectl-1.20.1-0.x86_64}
+#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.19.3-0.x86_64}
+#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.19.3-0.x86_64}
+#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.19.3-0.x86_64}
+#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.20.1-0.x86_64}
+#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.20.1-0.x86_64}
+#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.20.1-0.x86_64}
+#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.20.2-0.x86_64}
+#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.20.2-0.x86_64}
+#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.20.2-0.x86_64}
 
 echo "--- Letting iptables see bridged traffic ---"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
@@ -42,7 +55,7 @@ EOF
 sudo setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
-sudo yum install -y ${KUBELET_VERSION} ${KUBEADM_VERSION} ${KUBECTL_VERSION} --disableexcludes=kubernetes
+sudo yum install -y ${KUBELET_PACKAGE} ${KUBEADM_PACKAGE} ${KUBECTL_PACKAGE} --disableexcludes=kubernetes
 
 sudo systemctl enable --now kubelet
 
