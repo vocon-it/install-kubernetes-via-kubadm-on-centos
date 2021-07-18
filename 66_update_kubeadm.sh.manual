@@ -1,0 +1,24 @@
+
+# 1. Update kubeadm
+# on master:
+# 1.1 manually create a snapshot/backup
+# then:
+# 1.2 install latest kubeadm
+sudo yum install -y kubeadm-1.21.3-0 --disableexcludes=kubernetes
+# 1.3 check version
+sudo kubeadm version
+# 1.4 update:
+sudo kubeadm upgrade apply v1.21.3
+# 1.5 drain agents:
+kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
+# 1.6 On master and nodes: update kubelet and kubectl 
+sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
+# 1.7 Uncordon nodes:
+kubectl uncordon dev-node1
+# 1.8 Check versions
+kubectl get nodes
+# output:
+# NAME          STATUS   ROLES                  AGE   VERSION
+# dev-master1   Ready    control-plane,master   74d   v1.21.3
+# dev-node1     Ready    <none>                 74d   v1.21.3
+
