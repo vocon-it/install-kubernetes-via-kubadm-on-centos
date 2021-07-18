@@ -117,7 +117,11 @@ echo "----------------------------"
 echo "--- INSTALL CERT-MANAGER ---"
 echo "----------------------------"
 echo
-bash 7_install_cert_manager/1_install_cert-manager.sh
+if [ "${MASTER}" == "true" ] && [ "${AGENT}" == "true" ]; then
+  bash 7_install_cert_manager/1_install_cert-manager.sh
+else
+  echo "The node is no master and agent. Skipping this step."
+fi
 
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
