@@ -1,3 +1,4 @@
+#!/usr/bin/env bash -ex
 
 # Based on the official documentation (2020-10-20) on https://kubernetes.io/docs/setup/production-environment/container-runtimes/
 #   --> chapter: Docker
@@ -6,8 +7,7 @@
 # +The + sign on the comment mark deviations/additions from the official documentation
 
 # +Versions
-CONTAINERD_VERSION=${CONTAINERD_VERSION:=1.2.13}
-DOCKER_VERSION=${DOCKER_VERSION:=19.03.11}
+DOCKER_VERSION=${DOCKER_VERSION:=20.10.7}
 
 
 # +Update
@@ -24,7 +24,7 @@ sudo yum-config-manager --add-repo \
 
 echo "--- Install Docker CE ---"
 sudo yum update -y && sudo yum install -y \
-  containerd.io-${CONTAINERD_VERSION} \
+  containerd.io \
   docker-ce-${DOCKER_VERSION} \
   docker-ce-cli-${DOCKER_VERSION}
 
