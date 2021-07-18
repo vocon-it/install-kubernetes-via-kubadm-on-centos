@@ -68,7 +68,11 @@ echo "------------------------------"
 echo "--- DEPLOY OVERLAY NETWORK ---"
 echo "------------------------------"
 echo
-bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+if [ "${MASTER}" == "true" ]; then
+  bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+else
+  echo "The node is no master. Skipping this step."
+fi
 
 echo "----------------------"
 echo "--- UNTAINT MASTER ---"
