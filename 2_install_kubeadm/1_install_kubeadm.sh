@@ -8,6 +8,8 @@ set -e
 
 sudo yum list installed | grep kubeadm && echo "kubeadm is already installed. You need do remove kubeadm first." && false
 
+# latest tested version (dev-node2):
+KUBEADM_VERSION=${KUBEADM_VERSION:=1.20.3}
 if [ "${KUBEADM_VERSION}" != "" ]; then
   KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-${KUBEADM_VERSION}-0.x86_64}
   KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-${KUBEADM_VERSION}-0.x86_64}
@@ -20,17 +22,6 @@ else
 fi
 
 echo "Installing ${KUBELET_PACKAGE}, ${KUBEADM_PACKAGE} and ${KUBECTL_PACKAGE}"
-
-# latest tested versions:
-#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.19.3-0.x86_64}
-#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.19.3-0.x86_64}
-#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.19.3-0.x86_64}
-#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.20.1-0.x86_64}
-#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.20.1-0.x86_64}
-#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.20.1-0.x86_64}
-#KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-1.20.2-0.x86_64}
-#KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-1.20.2-0.x86_64}
-#KUBECTL_PACKAGE=${KUBECTL_PACKAGE:=kubectl-1.20.2-0.x86_64}
 
 echo "--- Letting iptables see bridged traffic ---"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
