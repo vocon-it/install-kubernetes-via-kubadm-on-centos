@@ -9,7 +9,7 @@ set -e
 sudo yum list installed | grep kubeadm && echo "kubeadm is already installed. You need do remove kubeadm first." && false
 
 # latest tested version (dev-node2):
-KUBEADM_VERSION=${KUBEADM_VERSION:=latest} // latest tested version: 1.20.3
+KUBEADM_VERSION=${KUBEADM_VERSION:=latest} # latest tested version: 1.20.3
 if [ "${KUBEADM_VERSION}" != "latest" ]; then
   KUBELET_PACKAGE=${KUBELET_PACKAGE:=kubelet-${KUBEADM_VERSION}-0.x86_64}
   KUBEADM_PACKAGE=${KUBEADM_PACKAGE:=kubeadm-${KUBEADM_VERSION}-0.x86_64}
