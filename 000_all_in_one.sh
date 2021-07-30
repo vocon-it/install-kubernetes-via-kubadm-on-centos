@@ -5,7 +5,7 @@ set -e
 
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 
-# Roles
+# Role Detection by hostname
 hostname | grep master && MASTER=true || true
 hostname | grep node && AGENT=true || true
 [ "${MASTER}" == "" ] && [ "${AGENT}" == "" ]  && MASTER=true && AGENT=true || true
@@ -14,19 +14,26 @@ echo "MASTER=${MASTER}"
 echo "AGENT=${AGENT}"
 
 if [ "${MASTER}" == "true" ]; then
-  #export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master.prod.vocon-it.com}
-  #export API_NAME="${API_NAME:=master1.prod.vocon-it.com}"
-  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=dev-master1.vocon-it.com}
 
-  # TODO: API_NAME does not seem to be used anywhere. Clean it, if you do not use it.
-  export API_NAME="${API_NAME:=dev-master1.vocon-it.com}"
+  # TODO: to get rid of the user input: test another possibility:
+  #  can we just use the hostname without DOMAIN? I guess, not, if we do not want to add the IP-Address to /etc/hosts?
+  #  export API_NAME=${API_NAME:=$(hostname)}
+  #  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
 
-  # TODO: ask the user for input: please test this!
-  read -i "${CONTROL_PLANE_ENDPOINT}" -p "CONTROL_PLANE_ENDPOINT: [${CONTROL_PLANE_ENDPOINT}] > "
+  # Ask user for CONTROL_PLANE_ENDPOINT value:
+  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master1.prod.vocon-it.com}
+  read -e -i "${CONTROL_PLANE_ENDPOINT}" -p "CONTROL_PLANE_ENDPOINT=" CONTROL_PLANE_ENDPOINT
 
-  # TODO: test another possibility: can we just use the hostname without DOMAIN? I guess, not, if we do not want to add the IP-Address to /etc/hosts?
-#  export API_NAME=${API_NAME:=$(hostname)}
-#  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
+  # Ask user for API_NAME value:
+  # TODO: API_NAME does not seem to be used anywhere? Clean it, if you do not use it.
+  export API_NAME="${CONTROL_PLANE_ENDPOINT:=master1.prod.vocon-it.com}"
+  read -e -i "${API_NAME}" -p "API_NAME=" API_NAME
+
+  if [ "${DEBUG}" == "true" ]; then
+    echo CONTROL_PLANE_ENDPOINT=$CONTROL_PLANE_ENDPOINT
+    echo API_NAME=API_NAME
+  fi
+
 fi
 
 # Define sudo, if it does not yet exist:
