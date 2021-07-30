@@ -5,7 +5,7 @@ set -e
 
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 
-# Roles
+# Role Detection by hostname
 hostname | grep master && MASTER=true || true
 hostname | grep node && AGENT=true || true
 [ "${MASTER}" == "" ] && [ "${AGENT}" == "" ]  && MASTER=true && AGENT=true || true
@@ -13,12 +13,27 @@ hostname | grep node && AGENT=true || true
 echo "MASTER=${MASTER}"
 echo "AGENT=${AGENT}"
 
-export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master.prod.vocon-it.com}
-export API_NAME=master1.prod.vocon-it.com
-
 if [ "${MASTER}" == "true" ]; then
-  export API_NAME=${API_NAME:=$(hostname)}
-  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
+
+  # TODO: to get rid of the user input: test another possibility:
+  #  can we just use the hostname without DOMAIN? I guess, not, if we do not want to add the IP-Address to /etc/hosts?
+  #  export API_NAME=${API_NAME:=$(hostname)}
+  #  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
+
+  # Ask user for CONTROL_PLANE_ENDPOINT value:
+  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master1.prod.vocon-it.com}
+  read -e -i "${CONTROL_PLANE_ENDPOINT}" -p "CONTROL_PLANE_ENDPOINT=" CONTROL_PLANE_ENDPOINT
+
+  # Ask user for API_NAME value:
+  # TODO: API_NAME does not seem to be used anywhere? Clean it, if you do not use it.
+  export API_NAME="${CONTROL_PLANE_ENDPOINT:=master1.prod.vocon-it.com}"
+  read -e -i "${API_NAME}" -p "API_NAME=" API_NAME
+
+  if [ "${DEBUG}" == "true" ]; then
+    echo CONTROL_PLANE_ENDPOINT=$CONTROL_PLANE_ENDPOINT
+    echo API_NAME=$API_NAME
+  fi
+
 fi
 
 # Define sudo, if it does not yet exist:
@@ -60,7 +75,11 @@ echo "------------------------------"
 echo "--- DEPLOY OVERLAY NETWORK ---"
 echo "------------------------------"
 echo
-bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+if [ "${MASTER}" == "true" ]; then
+  bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+else
+  echo "The node is no master. Skipping this step."
+fi
 
 echo "----------------------"
 echo "--- UNTAINT MASTER ---"
@@ -105,7 +124,11 @@ echo "----------------------------"
 echo "--- INSTALL CERT-MANAGER ---"
 echo "----------------------------"
 echo
-bash 7_install_cert_manager/1_install_cert-manager.sh
+if [ "${MASTER}" == "true" ] && [ "${AGENT}" == "true" ]; then
+  bash 7_install_cert_manager/1_install_cert-manager.sh
+else
+  echo "The node is no master and agent. Skipping this step."
+fi
 
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"

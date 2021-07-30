@@ -1,0 +1,15 @@
+
+# join a new agent:
+#   create a new token on master:
+kubeadm token create --print-join-command
+# output:
+# kubeadm join dev-master1.vocon-it.com:6443 --token f5prrm.8ndosp7gtgn1oz05 --discovery-token-ca-cert-hash sha256:16e85099af392ab80afa90ea8c0318a13302f709d9fb97567495fde5c0da8766
+sudo kubeadm join dev-master1.vocon-it.com:6443 --token f5prrm.8ndosp7gtgn1oz05 --discovery-token-ca-cert-hash sha256:16e85099af392ab80afa90ea8c0318a13302f709d9fb97567495fde5c0da8766
+# check
+kubectl get nodes
+# output:
+# NAME          STATUS   ROLES                  AGE    VERSION
+# dev-master1   Ready    control-plane,master   74d    v1.21.3
+# dev-node1     Ready    <none>                 74d    v1.21.3
+# dev-node2     Ready    <none>                 100s   v1.21.3    <---- new
+
