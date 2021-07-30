@@ -31,7 +31,7 @@ if [ "${MASTER}" == "true" ]; then
 
   if [ "${DEBUG}" == "true" ]; then
     echo CONTROL_PLANE_ENDPOINT=$CONTROL_PLANE_ENDPOINT
-    echo API_NAME=API_NAME
+    echo API_NAME=$API_NAME
   fi
 
 fi
