@@ -69,4 +69,7 @@ cat ${HOME}/.bashrc | grep 'source <(kubectl completion bash | sed' >/dev/null \
 source <(kubectl completion bash | sed 's/kubectl/k/g')
 EOF
 
+echo "Installing CRON job for pulling docker latest images every 15 minutes"
+sudo bash 10_install_cron_pull_latest_docker_images.sh '*/15 * * * *' /root/cron_pull_latest.sh vocon/intellij-desktop vocon/deploy-intellij-desktop
+
 unset _NOTHING_TO_DO
