@@ -5,7 +5,7 @@ set -e
 
 usage() {
   echo "usage: [DEBUG=true] $0 schedule install_file_path [image1 [image2 ...]]"
-  echo "e.g.:  bash $0 '*/15 * * * *' /root/.docker/cron_pull_latest.sh vocon/intellij-desktop vocon/deploy-intellij-desktop"
+  echo "e.g.:  bash $0 '*/15 * * * *' /root/cron_pull_latest.sh vocon/intellij-desktop vocon/deploy-intellij-desktop"
 }
 
 if [ $# -lt 2 ]; then
