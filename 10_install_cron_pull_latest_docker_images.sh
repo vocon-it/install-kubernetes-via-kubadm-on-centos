@@ -28,8 +28,8 @@ usage() {
 LATEST_IMAGES="$(echo $@ | tr '/' '\n')"
 
 # add latest images found via 'docker images':
-LATEST_IMAGES="${LATEST_IMAGES}
 docker login
+LATEST_IMAGES="${LATEST_IMAGES}
 $(docker images | grep latest | awk '{print $1}')
 "
 
