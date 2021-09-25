@@ -25,7 +25,7 @@ usage() {
 }
 
 # split input parameters in lines:
-LATEST_IMAGES="$(echo $@ | tr '/' '\n')"
+LATEST_IMAGES="$(echo $@ | tr ' ' '\n')"
 
 # add latest images found via 'docker images':
 docker login
