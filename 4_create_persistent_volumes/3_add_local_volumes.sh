@@ -29,7 +29,13 @@ EOF
 
 # detect external volumes. If found, use the last external volume in the list
 DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
-DISK=${DISK:=/mnt/disk}
+if [ "${DISK}" != "" ]; then
+  ln -s ${DISK} /mnt/disk
+else
+  mkdir /mnt/disk
+fi
+DISK=/mnt/disk
+#DISK=${DISK:=/mnt/disk}
 
 export NODE=$(hostname)
 for i in $(seq 1 $NUMBER_OF_VOLUMES);
