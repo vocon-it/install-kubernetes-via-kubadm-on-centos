@@ -30,7 +30,7 @@ EOF
 # detect external volumes. If found, use the last external volume in the list
 DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
 if [ "${DISK}" != "" ]; then
-  ln -s ${DISK} /mnt/disk
+  sudo ln -s ${DISK} /mnt/disk
 else
   mkdir /mnt/disk
 fi
