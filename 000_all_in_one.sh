@@ -110,8 +110,9 @@ echo "----------------------------------------------"
 echo "--- ADD KUBE PERSISTENT VOLUMES IF NEEDED  ---"
 echo "----------------------------------------------"
 echo
-#if [ "${MASTER}" != "true" ] \
-if [ "${AGENT}" == "true" ]; then
+if [ "${AGENT}" == "true" ] \
+  && [ "${NUMBER_OF_VOLUMES}" != "" ] \
+  && [ "${NUMBER_OF_VOLUMES}" != "0" ]; then
   sudo bash 4_create_persistent_volumes/1_storage_class.sh \
     && sudo bash 4_create_persistent_volumes/3_add_local_volumes.sh
 else
