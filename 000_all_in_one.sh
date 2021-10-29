@@ -6,9 +6,8 @@ set -e
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 
 # Role Detection by hostname
-hostname | grep master && MASTER=true || true
-hostname | grep node && AGENT=true || true
-[ "${MASTER}" == "" ] && [ "${AGENT}" == "" ]  && MASTER=true && AGENT=true || true
+hostname | grep master || AGENT=true
+hostname | grep node || MASTER=true
 
 echo "MASTER=${MASTER}"
 echo "AGENT=${AGENT}"
@@ -21,7 +20,7 @@ if [ "${MASTER}" == "true" ]; then
   #  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname)}
 
   # Ask user for CONTROL_PLANE_ENDPOINT value:
-  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=master1.prod.vocon-it.com}
+  export CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname).vocon-it.com}
   read -e -i "${CONTROL_PLANE_ENDPOINT}" -p "CONTROL_PLANE_ENDPOINT=" CONTROL_PLANE_ENDPOINT
 
   # Ask user for API_NAME value:
@@ -110,7 +109,6 @@ echo "----------------------------------------------"
 echo "--- ADD KUBE PERSISTENT VOLUMES IF NEEDED  ---"
 echo "----------------------------------------------"
 echo
-#if [ "${MASTER}" != "true" ] \
 if [ "${AGENT}" == "true" ]; then
   sudo bash 4_create_persistent_volumes/1_storage_class.sh \
     && sudo bash 4_create_persistent_volumes/3_add_local_volumes.sh

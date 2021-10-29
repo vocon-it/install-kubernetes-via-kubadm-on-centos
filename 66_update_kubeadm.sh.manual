@@ -1,13 +1,14 @@
 
 # 0. Upgrade docker, if needed. For that:
-kubectl drain node1 --ignore-daemonsets --delete-emptydir-data
+NODE=vocon-63432111
+kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data || kubectl drain $NODE --ignore-daemonsets
 OLD_PACKAGES=$(sudo yum list installed | egrep "docker" | awk '{print $1}')
 for PACKAGE in ${OLD_PACKAGES}; do
   echo "PACKAGE=${PACKAGE}"
   sudo yum remove -y "${PACKAGE}" && echo removed package ${PACKAGE}
 done
 sudo bash 1_install_docker.sh
-kubectl uncordon node1
+kubectl uncordon $NODE
 
 # 1. Update kubeadm
 # on master:
@@ -34,7 +35,7 @@ sudo kubeadm upgrade apply v1.20.9
 sudo kubeadm upgrade node
 # 1.5 drain agents:
 #kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
-kubectl drain node1 --ignore-daemonsets --delete-emptydir-data
+kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data
 # 1.6 On master and nodes: update kubelet and kubectl 
 #sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
 sudo yum install -y kubelet-1.20.9-0 kubectl-1.20.9-0 --disableexcludes=kubernetes
@@ -51,7 +52,7 @@ kubectl get nodes
 
 # 1.9 on nodes:
 #kubectl uncordon dev-node1
-kubectl uncordon node1
+kubectl uncordon $NODE
 
 # 2. Repeat the 1 steps for 1.21.3
 # master:
@@ -60,7 +61,7 @@ sudo kubeadm upgrade apply v1.21.3
 # node: (I have waited, until the master was upgraded, before performing the next step:)
 sudo kubeadm upgrade node
 # any:
-kubectl drain node1 --ignore-daemonsets --delete-emptydir-data
+kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data
 # master and nodes:
 sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
 sudo systemctl daemon-reload
