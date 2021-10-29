@@ -1,6 +1,9 @@
 
 # 0. Upgrade docker, if needed. For that:
-NODE=vocon-63432111
+NODE=node1
+# Note: the upgrade of vocon-63432111 was getting too complicated, so I have installed kube anew on that machine (2021-10-29); 
+#  I dit not follow the instructions of the current file "66_update_kubeadm.sh.manual"
+#  NODE=vocon-63432111
 kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data || kubectl drain $NODE --ignore-daemonsets
 OLD_PACKAGES=$(sudo yum list installed | egrep "docker" | awk '{print $1}')
 for PACKAGE in ${OLD_PACKAGES}; do
@@ -35,7 +38,7 @@ sudo kubeadm upgrade apply v1.20.9
 sudo kubeadm upgrade node
 # 1.5 drain agents:
 #kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
-kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data
+kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data || kubectl drain $NODE --ignore-daemonsets
 # 1.6 On master and nodes: update kubelet and kubectl 
 #sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
 sudo yum install -y kubelet-1.20.9-0 kubectl-1.20.9-0 --disableexcludes=kubernetes
