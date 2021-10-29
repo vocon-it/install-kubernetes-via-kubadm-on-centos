@@ -118,6 +118,20 @@ else
   true
 fi
 
+echo "---------------------------------"
+echo "--- INSTALL INGRESS IF NEEDED ---"
+echo "---------------------------------"
+echo
+if [ "${MASTER}" == "true" ]; then
+  if kubectl -n nginx-ingress get pod | grep nginx; then
+    echo "nginx-ingress is installed already. Skipping the installation of NginX.com ingress controller."
+  else
+    bash 5_install_ingress/000_nginxinc_all_in_one.sh
+  fi
+else
+  echo "The node is no master. Skipping this step."
+fi
+
 echo "----------------------------"
 echo "--- INSTALL CERT-MANAGER ---"
 echo "----------------------------"
