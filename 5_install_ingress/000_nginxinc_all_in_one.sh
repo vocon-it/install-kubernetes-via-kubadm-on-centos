@@ -2,12 +2,19 @@
 # Install NginX INC Controller 
 # Official Documentation: see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests
 
+usage() {
+  echo "usage: [NGINXINC_BRANCH=release-2.0] bash $0 [-d]"
+  echo "       -d delete"
+}
+
+[ $# -gt 1 ] && usage && exit 1
+[ $# -eq 1 ] && [ "$1" != "-d" ]  && usage && exit 1
+
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
 #NGINXINC_BRANCH=master
 #NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-1.9} # Note: '1.9' is a moving target and it refers to 1.9.1, currently (as of 2021-01-03)
 NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-2.0} # Note: '2.0' is a moving target and it refers to 2.0.3, currently (as of 2021-11-06)
 BASE_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${NGINXINC_BRANCH}/deployments"
-
 
 # choose the environment, where to deploy the NginX controller by choosing the KUBECONFIG file:
 DEPLOY_ON_ENVIRONMENT=${DEPLOY_ON_ENVIRONMENT:=local}
