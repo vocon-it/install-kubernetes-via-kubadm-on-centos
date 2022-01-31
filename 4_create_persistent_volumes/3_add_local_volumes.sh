@@ -1,6 +1,8 @@
 
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
+#OFFSET=200
+OFFSET=0
 
 # create template
 cat > persistentVolume.yaml.tmpl << 'EOF'
@@ -16,7 +18,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: my-local-storage-class
   local:
-    path: /mnt/disk/vol${i}
+    path: ${DISK}/vol${i}
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -28,17 +30,19 @@ spec:
 EOF
 
 # detect external volumes. If found, use the last external volume in the list
-DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
-if [ "${DISK}" != "" ]; then
-  sudo ln -s ${DISK} /mnt/disk
-else
-  mkdir /mnt/disk
-fi
-DISK=/mnt/disk
+export DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
+
+#if [ "${DISK}" != "" ]; then
+#  sudo ln -s ${DISK} /mnt/disk
+#else
+#  mkdir /mnt/disk
+#fi
+#DISK=/mnt/disk
 #DISK=${DISK:=/mnt/disk}
 
+
 export NODE=$(hostname)
-for i in $(seq 1 $NUMBER_OF_VOLUMES);
+for i in $(seq $((1 + OFFSET)) $((OFFSET + NUMBER_OF_VOLUMES)));
 do
   export i=$i
 
