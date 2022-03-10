@@ -10,7 +10,7 @@ cat > persistentVolume.yaml.tmpl << 'EOF'
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: $(echo $DISK | awk -F'/mnt/' '{print $2}')_vol${i}
+  name: ${VOLUME_NAME_PREFIX}-vol${i}
 spec:
   capacity:
     storage: 500Gi
@@ -30,21 +30,13 @@ spec:
           - ${NODE}
 EOF
 
-# detect external volumes. If found, use the last external volume in the list
+# old: detect latest volume from df:
 #export DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
-# detect latest Volume starting with name 'HC':
+# new: detect latest Volume starting with name 'HC':
 export DISK=${DISK:=$(cat /etc/fstab | grep '/mnt/HC' | cut -d' ' -f2 | tail -1)}
-
-#if [ "${DISK}" != "" ]; then
-#  sudo ln -s ${DISK} /mnt/disk
-#else
-#  mkdir /mnt/disk
-#fi
-#DISK=/mnt/disk
-#DISK=${DISK:=/mnt/disk}
-
-
+export VOLUME_NAME_PREFIX=$(echo $DISK | awk -F'/mnt/' '{print $2}' | sed -e 's/\(.*\)/\L\1/' | sed 's,_,-,g')
 export NODE=$(hostname)
+
 for i in $(seq $OFFSET $((OFFSET + NUMBER_OF_VOLUMES -1)));
 do
   export i=$i
@@ -57,9 +49,9 @@ do
     sudo chmod 777 ${DISK}/$DIRNAME
   fi
   # create persistentVolume
-  cat persistentVolume.yaml.tmpl | envsubst > persistentVolume.yaml
-  kubectl $CMD -f persistentVolume.yaml
+  cat persistentVolume.yaml.tmpl | envsubst 
+  cat persistentVolume.yaml.tmpl | envsubst | kubectl apply -f -
 done    
 
 # cleaning
-rm persistentVolume.yaml.tmpl persistentVolume.yaml 
+rm persistentVolume.yaml.tmpl
