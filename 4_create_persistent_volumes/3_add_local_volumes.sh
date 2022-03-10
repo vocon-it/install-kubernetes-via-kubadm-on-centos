@@ -1,15 +1,16 @@
 
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
-NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
-#OFFSET=200
+NUMBER_OF_VOLUMES=100
 OFFSET=0
+
+NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 
 # create template
 cat > persistentVolume.yaml.tmpl << 'EOF'
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: vol${i}
+  name: $(echo $DISK | awk -F'/mnt/' '{print $2}')_vol${i}
 spec:
   capacity:
     storage: 500Gi
@@ -30,7 +31,9 @@ spec:
 EOF
 
 # detect external volumes. If found, use the last external volume in the list
-export DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
+#export DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
+# detect latest Volume starting with name 'HC':
+export DISK=${DISK:=$(cat /etc/fstab | grep '/mnt/HC' | cut -d' ' -f2 | tail -1)}
 
 #if [ "${DISK}" != "" ]; then
 #  sudo ln -s ${DISK} /mnt/disk
@@ -42,7 +45,7 @@ export DISK=${DISK:=$(df | grep mnt | tail -n 1 | awk '{print $6}')}
 
 
 export NODE=$(hostname)
-for i in $(seq $((1 + OFFSET)) $((OFFSET + NUMBER_OF_VOLUMES)));
+for i in $(seq $OFFSET $((OFFSET + NUMBER_OF_VOLUMES -1)));
 do
   export i=$i
 
