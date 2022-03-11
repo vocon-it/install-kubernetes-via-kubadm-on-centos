@@ -1,0 +1,278 @@
+DISK=/mnt/HC_Volume_16551001
+DISK_ALIAS=/mnt/prod-node-volume-nbg1-2-xfs
+DATE_RELATIVE=${DATE_RELATIVE:='42 days ago'}
+
+get-local-path-of-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o=json | jq -r '.spec.local.path'
+}
+
+
+get-pvc-name-by-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o json | jq -r '.spec.claimRef.name' 
+}
+
+
+get-pvc-namespace-by-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o json | jq -r '.spec.claimRef.namespace' 
+}
+
+
+release-pvc() {
+  usage() {
+    echo "usage: release-pvc <pvc-name> <pvc-namespace>"
+  }
+
+  _PVC_NAME=$1
+  _PVC_NAMESPACE=$2
+
+  ([ "${_PVC_NAME}" == "" ] || [ "${_PVC_NAMESPACE}" == "" ]) && usage >&2 && return 1
+
+  kubectl -n "${_PVC_NAMESPACE}" apply view-last-applied pvc "${_PVC_NAME}"
+  echo NOT IMPLEMENTED && return 1
+  # kubectl -n "${_PVC_NAMESPACE}" apply view-last-applied pvc "${_PVC_NAME}" | kubectl apply -f -
+}
+
+
+release-pvc-by-pv() {
+  usage() {
+    echo "usage: release-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  release-pvc $(get-pvc-name-by-pv $_VOL) $(get-pvc-namespace-by-pv $_VOL)
+}
+
+
+retain-pv() {
+  usage() {
+    echo "usage: retain-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  echo kubectl patch pv $VOL -p '{"spec":{"claimRef": null}}'
+  echo NOT IMPLEMENTED && return 1
+}
+
+
+clean-disk() {
+  usage() {
+    echo "usage: clean-disk <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  echo rm -rf $DISK/$VOL/*
+  echo $_NAMESPACE >> ~/.cleaned_namespaces
+
+}
+
+
+backup-pvc-by-pv() {
+  usage() {
+    echo "usage: backup-pvc-by-pv <volume-name> <backup-path>"
+  }
+
+  _VOL=$1
+  _BACKUP_PATH=${BACKUP_PATH:=$2}
+  _BACKUP_PATH=${_BACKUP_PATH:=~/volume-yamls}
+
+  ([ "${_VOL}" == "" ] || [ "${_BACKUP_PATH}" == "" ]) && usage >&2 && return 1
+
+  # Determine namespace and name of PVC:
+  _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+  _PVC_NAME=$(get-pvc-name-by-pv $_VOL)
+
+  # Create Backup
+  kubectl -n $_PVC_NAMESPACE get pvc $_PVC_NAME -o yaml > "${_BACKUP_PATH}/${_VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml"
+
+}
+
+
+clean-volume-and-disk-and-pvc() {
+  usage() {
+    echo "usage: clean-volume-and-disk-and-pvc <volume>"
+  }
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+  echo "cleaning ${_VOL}..."
+  du -d 0
+
+  # Create backup of PVC yaml:
+  backup-pvc-by-pv $_VOL
+
+  # patch PVC to release the PV:
+  release-pvc-by-pv $_VOL
+  retain-pv $_VOL
+  clean-disk $_VOL
+}
+
+
+clean_old() {
+  # echo -n "           do something here; e.g. cleaning $VOL"
+  echo
+  du -d 0 $DISK/$VOL
+  _PVC=$(kubectl -n $_NAMESPACE get pvc -o json | jq -r '.items[0].metadata.name')
+  kubectl -n $_NAMESPACE get pvc $_PVC
+  kubectl -n $_NAMESPACE get pvc $_PVC -o yaml > ~/volume-yamls/${VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml
+  kubectl -n $_NAMESPACE delete pvc $_PVC
+  PROJECT=intellij-desktop
+  
+  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${PROJECT}
+  namespace: ${_NAMESPACE}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: my-local-storage-class
+  resources:
+    requests:
+      storage: 500Gi
+EOF
+
+  kubectl get pv $VOL
+  kubectl patch pv $VOL -p '{"spec":{"claimRef": null}}'
+  kubectl get pv $VOL
+  rm -rf $DISK/$VOL/*
+  echo $_NAMESPACE >> ~/.cleaned_namespaces
+}
+
+
+get-disk-aliases() {
+  usage() {
+    echo "usage: get-disk-aliases <disk>"
+  }
+
+  _DISK=$1
+  echo "_DISK=$_DISK"
+
+  [ "${_DISK}" == "" ] && usage >&2 && return 1
+
+  _DEVICE=$(cat /etc/fstab | grep $_DISK | awk '{print $1}')
+  cat /etc/fstab | grep $_DEVICE | awk '{print $2}'
+}
+
+
+find-bound-volumes_old() {
+  _DISK=$1
+
+  for _DISK_ALIAS in $(get-disk-aliases $_DISK)
+  do
+    kubectl get pv -o=json | jq -r '.items[] | select(.spec.local.path|contains("'$_DISK_ALIAS'")) | select(.status.phase == "Bound") | .metadata.name'
+  done
+}
+
+
+find-bound-volumes() {
+  kubectl get pv -o=json | jq -r '.items[] | select(.status.phase == "Bound") | .metadata.name'
+}
+
+
+find-newer-files() {
+  usage() {
+    echo "usage: find-newer-files [<path>] [<date-relative>]"
+  }
+
+  _PATH=$1
+  # default:
+  #_PATH=${_PATH:=.}
+  _DATE_RELATIVE=$2
+  # default:
+  #_DATE_RELATIVE=${_DATE_RELATIVE:='30 days ago'}
+
+  ([ "${_PATH}" == "" ] || [ "${_DATE_RELATIVE}" == "" ]) && usage >&2 && return 1
+ 
+  find $_PATH -newermt $(date +%Y-%m-%d -d "$_DATE_RELATIVE") -type f -print
+}
+
+
+##################
+###### MAIN ######
+##################
+
+# BETTER: just get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
+
+find-bound-volumes | while read _VOL;
+    do
+      _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
+      
+      echo -n "$_VOL: "
+      [ ! -d "${_VOLUME_LOCAL_PATH}" ] && echo "does not exist on this node" && continue
+      find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE grep -q '.' && echo new && continue
+      echo clean-volume-and-disk-and-pvc $_VOL
+done
+
+exit 0
+
+DISKS=$(df | grep mnt | awk '{print $NF}')
+for DISK in $DISKS; do
+  find-bound-volumes $DISK \
+    | while read _VOL;
+    do
+      _VOLUME_LOCAL_PATH=$(kubectl get pv $_VOL -o=json | jq -r '.spec.local.path')
+      echo -n "$_VOL: "
+      if find $_VOLUME_LOCAL_PATH -newermt $(date +%Y-%m-%d -d "$DATE_RELATIVE") -type f -print | grep -q '.'; then
+        echo new
+      else
+        echo old ----------------
+        clean-volume-and-disk-and-pvc $_VOL
+      fi
+    done
+done
+
+exit
+
+# Iterate through all obsolete occupied disks
+kubectl get pv -o=json | jq -r '.items[] | select(.spec.local.path|contains("'$DISK_ALIAS'")) | select(.status.phase == "Bound") | .metadata.name' \
+  | while read VOL; 
+    do 
+      _VOLUME_LOCAL_PATH=$(kubectl get pv $VOL -o=json | jq -r '.spec.local.path')
+
+      echo -n "$VOL: "
+      if find $_VOLUME_LOCAL_PATH -newermt $(date +%Y-%m-%d -d "$DATE_RELATIVE") -type f -print | grep -q '.'; then
+        echo new
+      else
+        echo old
+        _NAMESPACE=$(ls -l $DISK/$VOL | tr '\n' ' ' | awk '{print $11}')
+        echo -n "old $_NAMESPACE"
+        clean_old
+        echo
+      fi
+    done
+cat ~/.cleaned_namespaces | uniq > ~/.cleaned_namespaces.uniq; mv ~/.cleaned_namespaces.uniq ~/.cleaned_namespaces
+
