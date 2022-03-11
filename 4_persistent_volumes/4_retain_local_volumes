@@ -233,7 +233,7 @@ find-bound-volumes | while read _VOL;
       
       echo -n "$_VOL: "
       [ ! -d "${_VOLUME_LOCAL_PATH}" ] && echo "does not exist on this node" && continue
-      find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE grep -q '.' && echo new && continue
+      find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE" | grep -q '.' && echo new && continue
       echo clean-volume-and-disk-and-pvc $_VOL
 done
 
