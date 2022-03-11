@@ -131,12 +131,12 @@ clean-volume-and-disk-and-pvc() {
   du -d 0
 
   # Create backup of PVC yaml:
-  backup-pvc-by-pv $_VOL
+  echo backup-pvc-by-pv $_VOL
 
   # patch PVC to release the PV:
-  release-pvc-by-pv $_VOL
-  retain-pv $_VOL
-  clean-disk $_VOL
+  echo release-pvc-by-pv $_VOL
+  echo retain-pv $_VOL
+  echo clean-disk $_VOL
 }
 
 
@@ -227,15 +227,17 @@ find-newer-files() {
 
 # BETTER: just get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
 
-find-bound-volumes | while read _VOL;
+#find-bound-volumes | while read _VOL;
+echo vol200 \
+  | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
       
       echo -n "$_VOL: "
       [ ! -d "${_VOLUME_LOCAL_PATH}" ] && echo "does not exist on this node" && continue
       find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE" | grep -q '.' && echo new && continue
-      echo clean-volume-and-disk-and-pvc $_VOL
-done
+      clean-volume-and-disk-and-pvc $_VOL
+    done
 
 exit 0
 
