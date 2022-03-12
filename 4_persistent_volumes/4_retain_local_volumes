@@ -119,7 +119,14 @@ clean-disk() {
   _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
   _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
 
-  echo rm -rf ${_VOLUME_LOCAL_PATH}/*
+  if [ "${_VOLUME_LOCAL_PATH}" != "" ] \
+    && [[ "${_VOLUME_LOCAL_PATH}" =~ ^/mnt/[^/]+ ]] \
+    && [ -d "${_VOLUME_LOCAL_PATH}" ]; then
+    echo "$rm -rf ${_VOLUME_LOCAL_PATH}/*"
+    rm -rf "${_VOLUME_LOCAL_PATH}/*"
+  else
+    echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exists or does not match /mnt/[^/]+"
+  fi
 }
 
 
@@ -267,7 +274,7 @@ find-newer-files() {
 
 # Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
 
-find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol2$' \
+find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol3$' \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
