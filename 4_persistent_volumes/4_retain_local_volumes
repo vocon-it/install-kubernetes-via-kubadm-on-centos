@@ -274,7 +274,7 @@ find-newer-files() {
 
 # Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
 
-find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol3$' \
+find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol4$' \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
