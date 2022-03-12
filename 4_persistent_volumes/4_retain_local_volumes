@@ -121,8 +121,10 @@ clean-disk() {
 
   if [ "${_VOLUME_LOCAL_PATH}" != "" ] \
     && [[ "${_VOLUME_LOCAL_PATH}" =~ ^/mnt/[^/]+ ]] \
-    && [ -d "${_VOLUME_LOCAL_PATH}" ]; then
-    echo "$rm -rf ${_VOLUME_LOCAL_PATH}/*"
+    && [ -d "${_VOLUME_LOCAL_PATH}" ] \
+    && echo ${_VOLUME_LOCAL_PATH}/* | grep -v \* 
+  then
+    echo "rm -rf ${_VOLUME_LOCAL_PATH}/*"
     rm -rf "${_VOLUME_LOCAL_PATH}/*"
   else
     echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exists or does not match /mnt/[^/]+"
