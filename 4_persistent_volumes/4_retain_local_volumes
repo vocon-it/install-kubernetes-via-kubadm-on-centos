@@ -168,6 +168,11 @@ clean-volume-and-disk-and-pvc() {
     && echo "DRY_RUN: backup-pvc-by-pv ${_VOL}..." \
     || backup-pvc-by-pv $_VOL
 
+  # removal of data must go before the delettion of the volume because clean-disk retrieves the path from the volume:
+  [ "${DRY_RUN}" != false ] \
+    && echo "DRY_RUN: clean-disk ${_VOL}..." \
+    || clean-disk $_VOL
+
   # patch PVC to release the PV:
   [ "${DRY_RUN}" != false ] \
     && echo "DRY_RUN: release-pvc-by-pv ${_VOL}..." \
@@ -182,9 +187,6 @@ clean-volume-and-disk-and-pvc() {
       && echo "DRY_RUN: retain-pv ${_VOL}..." \
       || retain-pv $_VOL
   fi
-  [ "${DRY_RUN}" != false ] \
-    && echo "DRY_RUN: clean-disk ${_VOL}..." \
-    || clean-disk $_VOL
 }
 
 
@@ -274,7 +276,7 @@ find-newer-files() {
 
 # Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
 
-find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol4$' \
+find-bound-volumes | egrep '^vol[0-9]{1,2}$' | egrep '^vol5$' \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
