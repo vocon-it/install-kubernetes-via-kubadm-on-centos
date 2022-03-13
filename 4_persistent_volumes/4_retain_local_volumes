@@ -267,18 +267,33 @@ get-disk-aliases() {
 }
 
 
-find-bound-volumes_old() {
-  _DISK=$1
-
-  for _DISK_ALIAS in $(get-disk-aliases $_DISK)
-  do
-    kubectl get pv -o=json | jq -r '.items[] | select(.spec.local.path|contains("'$_DISK_ALIAS'")) | select(.status.phase == "Bound") | .metadata.name'
-  done
+find-bound-volumes() {
+  kubectl get pv -o=json | jq -r '.items[] | select(.status.phase == "Bound") | .metadata.name'
 }
 
 
-find-bound-volumes() {
-  kubectl get pv -o=json | jq -r '.items[] | select(.status.phase == "Bound") | .metadata.name'
+find-bound-volumes-of-the-current-host() {
+  items() {
+    jq '.items[]'
+  }
+
+  filter-volumes-of-current-host() {
+    jq 'select(.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0] == "'$(hostname)'")'
+  }
+
+  bound() {
+    jq 'select(.status.phase == "Bound")'
+  }
+
+  printname() {
+    jq -r '.metadata.name'
+  }
+
+  kubectl get pv -o=json \
+    | items \
+    | bound \
+    | filter-volumes-of-current-host \
+    | printname
 }
 
 
@@ -300,6 +315,7 @@ find-newer-files() {
 }
 
 
+
 ##################
 ###### MAIN ######
 ##################
@@ -309,7 +325,7 @@ mkdir -p "${BACKUP_PATH}"
 # Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
   # vol22 is en exception and will never be removed: 
   # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
-find-bound-volumes | egrep -v '^vol22$' \
+find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
@@ -317,6 +333,7 @@ find-bound-volumes | egrep -v '^vol22$' \
 
       echo -n "$_VOL: "
       [ ! -d "${_VOLUME_LOCAL_PATH}" ] && echo "does not exist on this node" && continue
+      
       find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE" | grep -q '.' && echo new && continue
       if [ "${DRY_RUN}" != "false" ]; then
         # supports DRY_RUN:
