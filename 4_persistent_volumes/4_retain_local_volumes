@@ -153,6 +153,26 @@ backup-pvc-by-pv() {
 }
 
 
+delete_evicted_pods_of_namespace() {
+  usage() {
+    echo "usage: delete_evicted_pods_of_namespace <namespace>"
+  }
+
+  _NAMESPACE=$1
+
+  [ "${_NAMESPACE}" == "" ] && usage >&2 && return 1
+
+  _EVICTED_PODS=$(kubectl -n "${_NAMESPACE}" get pod -o json | jq -r '.items[] | select(.status.phase == "Failed") | select(.status.reason == "Evicted") | .metadata.name')
+
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: delete_evicted_pods_of_namespace found following evicted PODs: $_EVICTED_PODS"
+  else
+    [ "${_EVICTED_PODS}" != "" ] && kubectl -n "${_NAMESPACE}" delete pod $_EVICTED_PODS
+  fi
+
+}
+
+
 clean-volume-and-disk-and-pvc() {
   usage() {
     echo "usage: [DRY_RUN={true|false}] [DELETE_PV={true|false}] clean-volume-and-disk-and-pvc <volume>"
@@ -174,6 +194,10 @@ clean-volume-and-disk-and-pvc() {
   [ "${DRY_RUN}" != false ] \
     && echo "DRY_RUN: clean-disk ${_VOL}..." \
     || clean-disk $_VOL
+
+  # delete evicted pods if present
+  _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+  delete_evicted_pods_of_namespace "$_PVC_NAMESPACE"
 
   # patch PVC to release the PV:
   [ "${DRY_RUN}" != false ] \
@@ -268,7 +292,7 @@ find-newer-files() {
 
   ([ "${_PATH}" == "" ] || [ "${_DATE_RELATIVE}" == "" ]) && usage >&2 && return 1
 
-  find $_PATH -newermt $(date +%Y-%m-%d -d "$_DATE_RELATIVE") -type f -print
+  find -L $_PATH -newermt $(date +%Y-%m-%d -d "$_DATE_RELATIVE") -type f -print
 }
 
 
@@ -276,10 +300,12 @@ find-newer-files() {
 ###### MAIN ######
 ##################
 
-# Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
 
 mkdir -p "${BACKUP_PATH}"
-find-bound-volumes \
+# Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
+  # vol22 is en exception and will never be removed: 
+  # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
+find-bound-volumes | egrep -v '^vol22$' \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
