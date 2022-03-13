@@ -128,6 +128,7 @@ clean-disk() {
     rm -rf "${_VOLUME_LOCAL_PATH}/"*
   else
     echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exists or does not match /mnt/[^/]+"
+    return 1
   fi
 }
 
@@ -148,8 +149,7 @@ backup-pvc-by-pv() {
   _PVC_NAME=$(get-pvc-name-by-pv $_VOL)
 
   # Create Backup
-  kubectl -n $_PVC_NAMESPACE get pvc $_PVC_NAME -o yaml > "${_BACKUP_PATH}/${_VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml"
-
+  kubectl -n $_PVC_NAMESPACE get pvc $_PVC_NAME -o yaml > "${_BACKUP_PATH}/${_VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml" || return 1
 }
 
 
@@ -186,14 +186,18 @@ clean-volume-and-disk-and-pvc() {
   du -d 0
 
   # Create backup of PVC yaml:
-  [ "${DRY_RUN}" != false ] \
-    && echo "DRY_RUN: backup-pvc-by-pv ${_VOL}..." \
-    || backup-pvc-by-pv $_VOL
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: backup-pvc-by-pv ${_VOL}..."
+  else
+    backup-pvc-by-pv $_VOL || exit 1
+  fi
 
   # removal of data must go before the delettion of the volume because clean-disk retrieves the path from the volume:
-  [ "${DRY_RUN}" != false ] \
-    && echo "DRY_RUN: clean-disk ${_VOL}..." \
-    || clean-disk $_VOL
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: clean-disk ${_VOL}..." 
+  else
+    clean-disk $_VOL || exit 1
+  fi
 
   # delete evicted pods if present
   _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
