@@ -272,7 +272,7 @@ find-newer-files() {
 
 
 mkdir -p "${BACKUP_PATH}"
-# Get all Bound volumes, and check, whether it is on the machine and then check, if it is old. If so, do the cleaning.
+# Get all Bound volumes of the current node, check, whether it is on the machine, and then check if it is old. If so, do the cleaning.
   # vol22 is en exception and will never be removed: 
   # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
 find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
@@ -286,8 +286,12 @@ find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
       
       find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE" | grep -q '.' && echo new && continue
       if [ "${DRY_RUN}" != "false" ]; then
-        # supports DRY_RUN:
-        clean-volume-and-disk-and-pvc $_VOL
+        echo -n "cleaning (dry-run): "
+        echo -n "volume: $_VOLUME_LOCAL_PATH, "
+        echo -n "namespace: $_PVC_NAMESPACE"
+        echo
+        # clean-volume-and-disk-and-pvc supports DRY_RUN, so we can hand it over to see more details:
+        [ "${DEBUG}" != "" ] && [ "${DEBUG}" != "false" ] && clean-volume-and-disk-and-pvc $_VOL
       else
         clean-volume-and-disk-and-pvc $_VOL
         echo ${_PVC_NAMESPACE} >> ~/.cleaned_namespaces
