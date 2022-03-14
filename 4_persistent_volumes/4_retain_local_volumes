@@ -222,59 +222,11 @@ clean-volume-and-disk-and-pvc() {
 }
 
 
-clean_old() {
-  # echo -n "           do something here; e.g. cleaning $VOL"
-  echo
-  du -d 0 $DISK/$VOL
-  _PVC=$(kubectl -n $_NAMESPACE get pvc -o json | jq -r '.items[0].metadata.name')
-  kubectl -n $_NAMESPACE get pvc $_PVC
-  kubectl -n $_NAMESPACE get pvc $_PVC -o yaml > ~/volume-yamls/${VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml
-  kubectl -n $_NAMESPACE delete pvc $_PVC
-  PROJECT=intellij-desktop
-
-  cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: ${PROJECT}
-  namespace: ${_NAMESPACE}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: my-local-storage-class
-  resources:
-    requests:
-      storage: 500Gi
-EOF
-
-  kubectl get pv $VOL
-  kubectl patch pv $VOL -p '{"spec":{"claimRef": null}}'
-  kubectl get pv $VOL
-  rm -rf $DISK/$VOL/*
-  echo $_NAMESPACE >> ~/.cleaned_namespaces
-}
-
-get-disk-aliases() {
-  usage() {
-    echo "usage: get-disk-aliases <disk>"
+find-bound-volumes-of-the-current-host() {
+  get-persistent-volumes() {
+    kubectl get pv -o=json
   }
 
-  _DISK=$1
-  echo "_DISK=$_DISK"
-
-  [ "${_DISK}" == "" ] && usage >&2 && return 1
-
-  _DEVICE=$(cat /etc/fstab | grep $_DISK | awk '{print $1}')
-  cat /etc/fstab | grep $_DEVICE | awk '{print $2}'
-}
-
-
-find-bound-volumes() {
-  kubectl get pv -o=json | jq -r '.items[] | select(.status.phase == "Bound") | .metadata.name'
-}
-
-
-find-bound-volumes-of-the-current-host() {
   items() {
     jq '.items[]'
   }
@@ -291,7 +243,7 @@ find-bound-volumes-of-the-current-host() {
     jq -r '.metadata.name'
   }
 
-  kubectl get pv -o=json \
+  get-persistent-volumes \
     | items \
     | bound \
     | filter-volumes-of-current-host \
@@ -305,11 +257,7 @@ find-newer-files() {
   }
 
   _PATH=$1
-  # default:
-  #_PATH=${_PATH:=.}
   _DATE_RELATIVE=$2
-  # default:
-  #_DATE_RELATIVE=${_DATE_RELATIVE:='30 days ago'}
 
   ([ "${_PATH}" == "" ] || [ "${_DATE_RELATIVE}" == "" ]) && usage >&2 && return 1
 
