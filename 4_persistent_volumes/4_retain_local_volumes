@@ -185,8 +185,7 @@ clean-volume-and-disk-and-pvc() {
     || echo "cleaning ${_VOL}..."
 
   _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
-  echo "du -d 0 -h $_VOLUME_LOCAL_PATH"
-  du -d 0 -h $_VOLUME_LOCAL_PATH"
+  du -d 0 -h $_VOLUME_LOCAL_PATH
 
   # Create backup of PVC yaml:
   if [ "${DRY_RUN}" != false ]; then
