@@ -3,7 +3,7 @@
 DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
 DELETE_PV=${DELETE_PV:=false}
 DRY_RUN=${DRY_RUN:=false}
-BACKUP_PATH="${BACKUP_PATH:=~/volume-yamls}"
+BACKUP_PATH="${BACKUP_PATH:=${HOME}/volume-yamls}"
 
 usage() {
   echo -e "usage: [DRY_RUN={true|\e[4mfalse\e[0m}] [DELETE_PV={true|\e[4mfalse\e[0m}] [DATE_RELATIVE={date-relative|\e[4m'42 days ago'\e[0m] [BACKUP_PATH={path|\e[4m~/volume-yamls\e[0m}] bash $0"
