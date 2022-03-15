@@ -1,0 +1,322 @@
+#!/usr/bin/env bash
+
+DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
+DELETE_PV=${DELETE_PV:=false}
+DRY_RUN=${DRY_RUN:=false}
+BACKUP_PATH="${BACKUP_PATH:=${HOME}/volume-yamls}"
+
+usage() {
+  echo -e "usage: [DRY_RUN={true|\e[4mfalse\e[0m}] [DELETE_PV={true|\e[4mfalse\e[0m}] [DATE_RELATIVE={date-relative|\e[4m'42 days ago'\e[0m] [BACKUP_PATH={path|\e[4m~/volume-yamls\e[0m}] bash $0"
+}
+
+[ "$1" == "--help" ] && usage && exit 0
+[ $# -gt 0 ] && usage && exit 1
+
+get-local-path-of-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o=json | jq -r '.spec.local.path'
+}
+
+
+get-pvc-name-by-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o json | jq -r '.spec.claimRef.name'
+}
+
+
+get-pvc-namespace-by-pv() {
+  usage() {
+    echo "usage: get-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl get pv $_VOL -o json | jq -r '.spec.claimRef.namespace'
+}
+
+
+release-pvc() {
+  usage() {
+    echo "usage: release-pvc <pvc-name> <pvc-namespace>"
+  }
+
+  _PVC_NAME=$1
+  _PVC_NAMESPACE=$2
+
+  ([ "${_PVC_NAME}" == "" ] || [ "${_PVC_NAMESPACE}" == "" ]) && usage >&2 && return 1
+
+  _LAST_APPLIED="$(kubectl -n "${_PVC_NAMESPACE}" apply view-last-applied pvc "${_PVC_NAME}" )"
+  echo "$_LAST_APPLIED"
+  kubectl -n "${_PVC_NAMESPACE}" delete pvc "${_PVC_NAME}" && echo Deleted pvc "${_PVC_NAME}" on namespace "${_PVC_NAMESPACE}"
+  echo "$_LAST_APPLIED" | kubectl apply -f - && echo Re-created pvc "${_PVC_NAME}" on namespace "${_PVC_NAMESPACE}"
+}
+
+
+release-pvc-by-pv() {
+  usage() {
+    echo "usage: release-pvc-by-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  release-pvc $(get-pvc-name-by-pv $_VOL) $(get-pvc-namespace-by-pv $_VOL)
+}
+
+
+retain-pv() {
+  usage() {
+    echo "usage: retain-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl patch pv $_VOL -p '{"spec":{"claimRef": null}}'
+}
+
+
+delete-pv() {
+  usage() {
+    echo "usage: delete-pv <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  kubectl delete pv $_VOL
+}
+
+
+clean-disk() {
+  usage() {
+    echo "usage: clean-disk <volume-name>"
+  }
+
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+
+  _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
+  _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+
+  if [ "${_VOLUME_LOCAL_PATH}" != "" ] \
+    && [[ "${_VOLUME_LOCAL_PATH}" =~ ^/mnt/[^/]+ ]] \
+    && [ -d "${_VOLUME_LOCAL_PATH}" ] \
+    && echo ${_VOLUME_LOCAL_PATH}/* | grep -v \* 
+  then
+    echo "rm -rf ${_VOLUME_LOCAL_PATH}/*"
+    rm -rf "${_VOLUME_LOCAL_PATH}/"*
+  else
+    echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exists or does not match /mnt/[^/]+"
+    return 1
+  fi
+}
+
+
+backup-pvc-by-vol() {
+  usage() {
+    echo "usage: backup-pvc-by-vol <volume-name> <backup-path>"
+  }
+
+  _VOL=$1
+  _BACKUP_PATH=${BACKUP_PATH:=$2}
+
+  ([ "${_VOL}" == "" ] || [ "${_BACKUP_PATH}" == "" ]) && usage >&2 && return 1
+
+  # Determine namespace and name of PVC:
+  _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+  _PVC_NAME=$(get-pvc-name-by-pv $_VOL)
+
+  # Create Backup
+  kubectl -n $_PVC_NAMESPACE get pvc $_PVC_NAME -o yaml > "${_BACKUP_PATH}/${_VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml" || return 1
+}
+
+backup-pv() {
+  usage() {
+    echo "usage: backup-pv <volume-name> <backup-path>"
+  }
+
+  _PERSISTENT_VOL=$1
+  _BACKUP_PATH=${BACKUP_PATH:=$2}
+
+  ([ "${_PERSISTENT_VOL}" == "" ] || [ "${_BACKUP_PATH}" == "" ]) && usage >&2 && return 1
+
+  # Create Backup
+  kubectl get pv $_PERSISTENT_VOL -o yaml > "${_BACKUP_PATH}/${_PERSISTENT_VOL}_pv_$(date +%Y-%m-%dT%H:%M:%SZ).yaml" || return 1
+}
+
+
+
+delete_evicted_pods_of_namespace() {
+  usage() {
+    echo "usage: delete_evicted_pods_of_namespace <namespace>"
+  }
+
+  _NAMESPACE=$1
+
+  [ "${_NAMESPACE}" == "" ] && usage >&2 && return 1
+
+  _EVICTED_PODS=$(kubectl -n "${_NAMESPACE}" get pod -o json | jq -r '.items[] | select(.status.phase == "Failed") | select(.status.reason == "Evicted") | .metadata.name')
+
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: delete_evicted_pods_of_namespace found following evicted PODs: $_EVICTED_PODS"
+  else
+    [ "${_EVICTED_PODS}" != "" ] && kubectl -n "${_NAMESPACE}" delete pod $_EVICTED_PODS
+  fi
+
+}
+
+
+clean-volume-and-disk-and-pvc() {
+  usage() {
+    echo "usage: [DRY_RUN={true|false}] [DELETE_PV={true|false}] clean-volume-and-disk-and-pvc <volume>"
+  }
+  _VOL=$1
+
+  [ "${_VOL}" == "" ] && usage >&2 && return 1
+  [ "${DRY_RUN}" != false ] \
+    && echo "DRY_RUN: cleaning ${_VOL}..." \
+    || echo "cleaning ${_VOL}..."
+
+  _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
+  du -d 0 -h $_VOLUME_LOCAL_PATH
+
+  # Create backup of PVC yaml:
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: backup-pvc-by-vol ${_VOL}..."
+    echo "DRY_RUN: backup-pv ${_VOL}..."
+  else
+    backup-pvc-by-vol $_VOL || exit 1
+    backup-pv $_VOL || exit 1
+  fi
+
+  # removal of data must go before the delettion of the volume because clean-disk retrieves the path from the volume:
+  if [ "${DRY_RUN}" != false ]; then
+    echo "DRY_RUN: clean-disk ${_VOL}..." 
+  else
+    clean-disk $_VOL || exit 1
+  fi
+
+  # delete evicted pods if present
+  _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+  delete_evicted_pods_of_namespace "$_PVC_NAMESPACE"
+
+  # patch PVC to release the PV:
+  [ "${DRY_RUN}" != false ] \
+    && echo "DRY_RUN: release-pvc-by-pv ${_VOL}..." \
+    || release-pvc-by-pv $_VOL
+
+  if [ "${DELETE_PV}" == "true" ]; then
+    [ "${DRY_RUN}" != false ] \
+      && echo "DRY_RUN: delete-pv ${_VOL}..." \
+      || delete-pv $_VOL
+  else
+    [ "${DRY_RUN}" != false ] \
+      && echo "DRY_RUN: retain-pv ${_VOL}..." \
+      || retain-pv $_VOL
+  fi
+}
+
+
+find-bound-volumes-of-the-current-host() {
+  get-persistent-volumes() {
+    kubectl get pv -o=json
+  }
+
+  items() {
+    jq '.items[]'
+  }
+
+  filter-volumes-of-current-host() {
+    jq 'select(.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0] == "'$(hostname)'")'
+  }
+
+  bound() {
+    jq 'select(.status.phase == "Bound")'
+  }
+
+  printname() {
+    jq -r '.metadata.name'
+  }
+
+  get-persistent-volumes \
+    | items \
+    | bound \
+    | filter-volumes-of-current-host \
+    | printname
+}
+
+
+find-newer-files() {
+  usage() {
+    echo "usage: find-newer-files [<path>] [<date-relative>]"
+  }
+
+  _PATH=$1
+  _DATE_RELATIVE=$2
+
+  ([ "${_PATH}" == "" ] || [ "${_DATE_RELATIVE}" == "" ]) && usage >&2 && return 1
+
+  find -L $_PATH -newermt $(date +%Y-%m-%d -d "$_DATE_RELATIVE") -type f -print
+}
+
+
+
+##################
+###### MAIN ######
+##################
+
+
+mkdir -p "${BACKUP_PATH}"
+# Get all Bound volumes of the current node, check, whether it is on the machine, and then check if it is old. If so, do the cleaning.
+  # vol22 is en exception and will never be removed: 
+  # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
+find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
+  | while read _VOL;
+    do
+      _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
+      _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+
+      echo -n "$_VOL: "
+      [ ! -d "${_VOLUME_LOCAL_PATH}" ] && echo "does not exist on this node" && continue
+      
+      find-newer-files "${_VOLUME_LOCAL_PATH}" "$DATE_RELATIVE" | grep -q '.' && echo new && continue
+      if [ "${DRY_RUN}" != "false" ]; then
+        echo -n "cleaning (dry-run): "
+        echo -n "volume: $_VOLUME_LOCAL_PATH, "
+        echo -n "namespace: $_PVC_NAMESPACE"
+        echo
+        # clean-volume-and-disk-and-pvc supports DRY_RUN, so we can hand it over to see more details:
+        [ "${DEBUG}" != "" ] && [ "${DEBUG}" != "false" ] && clean-volume-and-disk-and-pvc $_VOL
+      else
+        echo -n "cleaning: "
+        echo -n "volume: $_VOLUME_LOCAL_PATH, "
+        echo -n "namespace: $_PVC_NAMESPACE"
+        echo
+        clean-volume-and-disk-and-pvc $_VOL
+        echo ${_PVC_NAMESPACE} >> ~/.cleaned_namespaces
+      fi
+    done
+
+cat ~/.cleaned_namespaces | uniq > ~/.cleaned_namespaces.uniq; mv ~/.cleaned_namespaces.uniq ~/.cleaned_namespaces
+
