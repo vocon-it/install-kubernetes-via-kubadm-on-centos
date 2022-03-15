@@ -309,6 +309,10 @@ find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
         # clean-volume-and-disk-and-pvc supports DRY_RUN, so we can hand it over to see more details:
         [ "${DEBUG}" != "" ] && [ "${DEBUG}" != "false" ] && clean-volume-and-disk-and-pvc $_VOL
       else
+        echo -n "cleaning: "
+        echo -n "volume: $_VOLUME_LOCAL_PATH, "
+        echo -n "namespace: $_PVC_NAMESPACE"
+        echo
         clean-volume-and-disk-and-pvc $_VOL
         echo ${_PVC_NAMESPACE} >> ~/.cleaned_namespaces
       fi
