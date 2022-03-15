@@ -133,14 +133,13 @@ clean-disk() {
 }
 
 
-backup-pvc-by-pv() {
+backup-pvc-by-vol() {
   usage() {
-    echo "usage: backup-pvc-by-pv <volume-name> <backup-path>"
+    echo "usage: backup-pvc-by-vol <volume-name> <backup-path>"
   }
 
   _VOL=$1
   _BACKUP_PATH=${BACKUP_PATH:=$2}
-  _BACKUP_PATH=${_BACKUP_PATH:=~/volume-yamls}
 
   ([ "${_VOL}" == "" ] || [ "${_BACKUP_PATH}" == "" ]) && usage >&2 && return 1
 
@@ -151,6 +150,21 @@ backup-pvc-by-pv() {
   # Create Backup
   kubectl -n $_PVC_NAMESPACE get pvc $_PVC_NAME -o yaml > "${_BACKUP_PATH}/${_VOL}_pvc_$(date +%Y-%m-%dT%H:%M:%SZ).yaml" || return 1
 }
+
+backup-pv() {
+  usage() {
+    echo "usage: backup-pv <volume-name> <backup-path>"
+  }
+
+  _PERSISTENT_VOL=$1
+  _BACKUP_PATH=${BACKUP_PATH:=$2}
+
+  ([ "${_PERSISTENT_VOL}" == "" ] || [ "${_BACKUP_PATH}" == "" ]) && usage >&2 && return 1
+
+  # Create Backup
+  kubectl get pv $_PERSISTENT_VOL -o yaml > "${_BACKUP_PATH}/${_PERSISTENT_VOL}_pv_$(date +%Y-%m-%dT%H:%M:%SZ).yaml" || return 1
+}
+
 
 
 delete_evicted_pods_of_namespace() {
@@ -189,9 +203,11 @@ clean-volume-and-disk-and-pvc() {
 
   # Create backup of PVC yaml:
   if [ "${DRY_RUN}" != false ]; then
-    echo "DRY_RUN: backup-pvc-by-pv ${_VOL}..."
+    echo "DRY_RUN: backup-pvc-by-vol ${_VOL}..."
+    echo "DRY_RUN: backup-pv ${_VOL}..."
   else
-    backup-pvc-by-pv $_VOL || exit 1
+    backup-pvc-by-vol $_VOL || exit 1
+    backup-pv $_VOL || exit 1
   fi
 
   # removal of data must go before the delettion of the volume because clean-disk retrieves the path from the volume:
