@@ -49,7 +49,7 @@ do
     sudo chmod 777 ${DISK}/$DIRNAME
   fi
   # create persistentVolume
-  cat persistentVolume.yaml.tmpl | envsubst 
+  [ "$DEBUG" != "" ] && cat persistentVolume.yaml.tmpl | envsubst 
   cat persistentVolume.yaml.tmpl | envsubst | kubectl apply -f -
 done    
 
