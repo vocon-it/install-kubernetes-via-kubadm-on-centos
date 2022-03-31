@@ -1,0 +1,14 @@
+#!/usr/local/bin/env bash
+
+SCHEDULE=${SCHEDULE:="0 2 * * *"}
+
+# update crontab:
+_TMP_FILE="/tmp/crontab_$(date +%F--%H-%M-%S)"
+sudo crontab -l | grep -v "hwclock" | egrep -v '^$' > ${_TMP_FILE} || true
+echo "${SCHEDULE} hwclock --hctosys" >> ${_TMP_FILE}
+sudo crontab ${_TMP_FILE}
+rm ${_TMP_FILE}
+
+echo "updated crontab:"
+sudo crontab -l
+
