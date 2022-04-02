@@ -49,6 +49,11 @@ $(df | grep -v docker)
 "
 
   OUT="$OUT
+kubectl top pod --all-namespaces --use-protocol-buffers | head -8
+$(kubectl top pod --all-namespaces --use-protocol-buffers | head -8)
+"
+
+  OUT="$OUT
 Statistics:
 200 OK: $COMPLETED_OK/$TOTAL_RESPONSES
 401 Unauthorized: $UNAUTHORIZED_RESPONSES/$TOTAL_RESPONSES
