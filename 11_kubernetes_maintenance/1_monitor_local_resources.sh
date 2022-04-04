@@ -41,6 +41,10 @@ while true; do
   COMPLETED_OK=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep 'Completed 200 OK' | wc -l)
 
   OUT="$OUT
+Free Mem of node: $(free -h | egrep '^Mem:' | awk '{print $7}')
+"
+
+  OUT="$OUT
 $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 "
 
