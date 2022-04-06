@@ -53,8 +53,8 @@ $(df | grep -v docker)
 "
 
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers | head -8
-$(kubectl top pod --all-namespaces --use-protocol-buffers | head -8)
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8
+$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8)
 "
 
   OUT="$OUT
