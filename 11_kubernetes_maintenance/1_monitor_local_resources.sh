@@ -45,6 +45,11 @@ Free Mem of node: $(free -h | egrep '^Mem:' | awk '{print $7}')
 "
 
   OUT="$OUT
+kubectl top nodes --use-protocol-buffers
+$(kubectl top nodes --use-protocol-buffers)
+"
+
+  OUT="$OUT
 $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 "
 
