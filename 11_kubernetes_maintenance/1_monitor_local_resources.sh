@@ -79,6 +79,16 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
+  OUT="$OUT
+$(curl -s -L cloud.vocon-it.com | grep -q IntellijFrontend \
+  || (
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
+      echo '!!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.vocon-it.com !!!!!!!!!!!!!'
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
+     )
+ )
+"
+
   clear
   echo "$OUT"
   sleep 2
