@@ -54,7 +54,7 @@ $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 "
 
   OUT="$OUT
-$(df | grep -v docker)
+$(df | grep -v docker | grep -v containerd)
 "
 
   OUT="$OUT
@@ -87,6 +87,11 @@ $(curl -s -L cloud.vocon-it.com | grep -q IntellijFrontend \
       echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
      )
  )
+"
+
+  OUT="$OUT
+$(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
+$(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
   clear
