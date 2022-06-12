@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
+[ "${REPAIR}" != "" ] && DRY_RUN=true && DEBUG=true && DATE_RELATIVE="0 days ago"
+DATE_RELATIVE="${DATE_RELATIVE:="90 days ago"}"
 DELETE_PV=${DELETE_PV:=false}
 DRY_RUN=${DRY_RUN:=false}
 BACKUP_PATH="${BACKUP_PATH:=${HOME}/volume-yamls}"
 
 usage() {
   echo -e "usage: [DRY_RUN={true|\e[4mfalse\e[0m}] [DELETE_PV={true|\e[4mfalse\e[0m}] [DATE_RELATIVE={date-relative|\e[4m'42 days ago'\e[0m] [BACKUP_PATH={path|\e[4m~/volume-yamls\e[0m}] bash $0"
+  echo -e "       REPAIR=true bash $0"
 }
 
 [ "$1" == "--help" ] && usage && exit 0
@@ -124,11 +126,31 @@ clean-disk() {
     && [ -d "${_VOLUME_LOCAL_PATH}" ] \
     && echo ${_VOLUME_LOCAL_PATH}/* | grep -v \* 
   then
-    echo "rm -rf ${_VOLUME_LOCAL_PATH}/*"
-    rm -rf "${_VOLUME_LOCAL_PATH}/"*
+    echo "sudo rm -rf \"${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}\""
+    # if keeping backup: not implemented yet, since there is no solution how to prevent continuous growing:
+    # echo mv "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}" "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}.bak-$(date +%Y-%m-%d--%H-%M-%S)"
+    if [ "${DRY_RUN}" != "false" ]; then
+      echo "DRY_RUN=true, simulating removal of $(echo "${_VOLUME_LOCAL_PATH}/"*)"
+    else
+      # if keeping backup: not implemented yet, since there is no solution how to prevent continuous growing:
+      # mv "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}" "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}.bak-$(date +%Y-%m-%d--%H-%M-%S)"
+      sudo rm -rf "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+    fi
   else
-    echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exists or does not match /mnt/[^/]+"
-    return 1
+    echo "Error: _VOLUME_LOCAL_PATH = ${_VOLUME_LOCAL_PATH} does not exist or does not match /mnt/[^/]+"
+    if [ "${DRY_RUN}" != "true" ] || [ "${REPAIR}" != "" ]; then
+      echo "       ... stopping on Error. Try repairing with REPAIR=true bash $0" 
+      return 1
+    fi
+    if [ "${REPAIR}" != "" ]; then
+      echo sudo mkdir -p "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      sudo mkdir -p "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      echo sudo chown root:1000 "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      sudo chown root:1000 "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      echo sudo chmod -R 777 "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      sudo chmod -R 777 "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+      ls -ld "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}"
+    fi
   fi
 }
 
@@ -213,6 +235,7 @@ clean-volume-and-disk-and-pvc() {
   # removal of data must go before the delettion of the volume because clean-disk retrieves the path from the volume:
   if [ "${DRY_RUN}" != false ]; then
     echo "DRY_RUN: clean-disk ${_VOL}..." 
+    clean-disk $_VOL 
   else
     clean-disk $_VOL || exit 1
   fi
@@ -291,7 +314,8 @@ mkdir -p "${BACKUP_PATH}"
 # Get all Bound volumes of the current node, check, whether it is on the machine, and then check if it is old. If so, do the cleaning.
   # vol22 is en exception and will never be removed: 
   # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
-find-bound-volumes-of-the-current-host | egrep -v '^vol22$' \
+#find-bound-volumes-of-the-current-host | egrep -v '^vol22$' | grep 18549252 | egrep 'vol0$' \
+find-bound-volumes-of-the-current-host | egrep -v '^vol22$'  \
   | while read _VOL;
     do
       _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
