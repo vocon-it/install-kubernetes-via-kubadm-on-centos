@@ -3,7 +3,7 @@ certManagerUpAndRunning() {
 }
 
 if ! certManagerUpAndRunning; then
-  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.8.0/cert-manager.yaml
 else
   exit 0
 fi

@@ -27,13 +27,23 @@ sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes
 # 1.2.2 upgrade plan
 sudo kubeadm upgrade plan
 # got following info: update to 1.20.9, but install kubeadm 1.20.9 first!
+# PROBLEM: after having updated to 1.21.12, I get: "remote version is much newer: v1.24.0; falling back to: stable-1.21"
+# SOLUTION: sudo yum remove -y kubeadm-1.24.0-0 --disableexcludes=kubernetes; sudo yum install -y kubeadm-1.22.9-0 --disableexcludes=kubernetes; sudo kubeadm upgrade plan
+
 # 1.2.3 update kubeadm
 sudo yum install -y kubeadm-1.20.9-0 --disableexcludes=kubernetes
 # 1.2.4 Update to 1.20.9:
 # on master and nodes:
 sudo kubeadm config images pull # for pre-fetching the required images
-# on master only:
+
+# on master only: upgrade kubeadm
 sudo kubeadm upgrade apply v1.20.9
+
+# update config:
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config  
+
 # on the nodes only:
 sudo kubeadm upgrade node
 # 1.5 drain agents:
@@ -99,3 +109,21 @@ sudo kubeadm certs check-expiration
 # front-proxy-ca          Dec 26, 2030 19:04 UTC   9y              no
 
 # Then: perform smoke tests
+
+
+# upgrade iDEV v1.21.12 to v1.22.9:
+sudo yum install -y kubeadm-1.22.9-0 --disableexcludes=kubernetes # on all machines (also on the worker nodes, because we need it for pre-downloading the images)
+sudo kubeadm upgrade plan # master
+sudo kubeadm config images pull # on all machines
+sudo kubeadm upgrade apply v1.22.9 # on master
+k get nodes
+kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
+kubectl drain dev-node2 --ignore-daemonsets --delete-emptydir-data
+sudo yum install -y kubelet-1.22.9-0 kubectl-1.22.9-0 --disableexcludes=kubernetes # on all machines
+sudo systemctl daemon-reload # on all machines
+sudo systemctl restart kubelet # on all machines
+k get nodes
+sudo kubeadm certs check-expiration # on master
+kubectl uncordon dev-node1 # on master
+kubectl uncordon dev-node2 # on master
+
