@@ -36,9 +36,9 @@ while true; do
   OUT="watch: $0
 "
 
-  TOTAL_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | wc -l)
+  TOTAL_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep -v memory | wc -l)
   UNAUTHORIZED_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep error=Unauthorized | wc -l)
-  COMPLETED_OK=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep 'Completed 200 OK' | wc -l)
+  COMPLETED_OK=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep url | wc -l)
 
   OUT="$OUT
 Free Mem of node: $(free -h | egrep '^Mem:' | awk '{print $7}')
