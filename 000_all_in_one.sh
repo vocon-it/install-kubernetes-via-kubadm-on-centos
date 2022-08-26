@@ -142,6 +142,13 @@ else
   echo "The node is no master and agent. Skipping this step."
 fi
 
+echo "------------------------------"
+echo "--- ENABLE USER NAMESPACES ---"
+echo "------------------------------"
+echo
+[ "${AGENT}" == "true" ] && bash 13_enable_user_namespaces.sh || echo "The node is no agent. Skipping this step."
+
+
 echo "--------------------------------------"
 echo "--- ADD KUBE ALIASES AND FUNCTIONS ---"
 echo "--------------------------------------"
