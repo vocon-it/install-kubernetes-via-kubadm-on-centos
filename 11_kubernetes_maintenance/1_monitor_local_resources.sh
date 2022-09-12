@@ -58,8 +58,8 @@ $(df | grep -v docker | grep -v containerd)
 "
 
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8
-$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8)
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8
+$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
 "
 
   OUT="$OUT
