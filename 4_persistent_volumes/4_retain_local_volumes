@@ -310,6 +310,7 @@ find-newer-files() {
 ##################
 
 
+touch ~/.cleaned_namespaces
 mkdir -p "${BACKUP_PATH}"
 # Get all Bound volumes of the current node, check, whether it is on the machine, and then check if it is old. If so, do the cleaning.
   # vol22 is en exception and will never be removed: 
