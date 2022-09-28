@@ -337,7 +337,7 @@ find-bound-volumes-of-the-current-host | egrep -v '^vol22$'  \
         echo -n "cleaning: "
         echo -n "volume: $_VOLUME_LOCAL_PATH, "
         echo -n "namespace: $_PVC_NAMESPACE"
-        if [ $(kubectl -n $_PVC_NAMESPACE get pod | wc -l) -gt 1 ]; then 
+        if [ $(kubectl -n $_PVC_NAMESPACE get pod 2>/dev/null | wc -l) -gt 1 ]; then 
           echo " skipped because of existing PODs in the namespace"
         else
           echo
