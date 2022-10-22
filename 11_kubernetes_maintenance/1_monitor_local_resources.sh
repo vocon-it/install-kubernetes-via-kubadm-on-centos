@@ -94,6 +94,11 @@ $(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intelli
 $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
+  OUT="$OUT
+Non-Running PODs in kube-system Namespace:
+$(kubectl -n kube-system get pod | egrep -v 'Running')
+"
+
   clear
   echo "$OUT"
   sleep 2
