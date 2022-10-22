@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[ "${REPAIR}" != "" ] && DRY_RUN=true && DEBUG=true && DATE_RELATIVE="0 days ago"
+[ "${REPAIR}" != "" ] && DRY_RUN=${DRY_RUN:=true} && DEBUG=true && DATE_RELATIVE="0 days ago"
 DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
 DELETE_PV=${DELETE_PV:=false}
 DRY_RUN=${DRY_RUN:=false}
@@ -120,6 +120,8 @@ clean-disk() {
 
   _VOLUME_LOCAL_PATH=$(get-local-path-of-pv $_VOL)
   _PVC_NAMESPACE=$(get-pvc-namespace-by-pv $_VOL)
+
+  [ ! -d "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}" ] && echo -n "ERROR: ${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE} does not exists. Repairing..." && mkdir "${_VOLUME_LOCAL_PATH}/${_PVC_NAMESPACE}" && echo "DONE"
 
   if [ "${_VOLUME_LOCAL_PATH}" != "" ] \
     && [[ "${_VOLUME_LOCAL_PATH}" =~ ^/mnt/[^/]+ ]] \
@@ -316,6 +318,7 @@ mkdir -p "${BACKUP_PATH}"
   # vol22 is en exception and will never be removed: 
   # oliver.veits@web.de, JB9PZSgta2gRGAoyYuaZ8ZvCnqw2, jb9pzsgta2grgaoyyuaz8zvcnqw2, project ngrx-store-hello-world):
 #find-bound-volumes-of-the-current-host | egrep -v '^vol22$' | grep 18549252 | egrep 'vol0$' \
+#find-bound-volumes-of-the-current-host | egrep 'hc-volume-23493600-vol18$' | egrep -v '^vol22$'  \
 find-bound-volumes-of-the-current-host | egrep -v '^vol22$'  \
   | while read _VOL;
     do
@@ -349,3 +352,4 @@ find-bound-volumes-of-the-current-host | egrep -v '^vol22$'  \
 
 cat ~/.cleaned_namespaces | uniq > ~/.cleaned_namespaces.uniq; mv ~/.cleaned_namespaces.uniq ~/.cleaned_namespaces
 
+echo "Finished at $(date)"
