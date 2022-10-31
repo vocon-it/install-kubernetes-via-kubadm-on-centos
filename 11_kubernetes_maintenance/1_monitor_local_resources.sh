@@ -57,9 +57,10 @@ $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 $(df | grep -v docker | grep -v containerd)
 "
 
+#$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
 kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8
-$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
+$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1;kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8 | while read LINE; do echo "$LINE      $(kubectl -n $(echo $LINE | awk '{print $1}') get pod -o wide $(echo $LINE | awk '{print $2}') | tail -1 | awk '{print $7}')"; done)
 "
 
   OUT="$OUT
