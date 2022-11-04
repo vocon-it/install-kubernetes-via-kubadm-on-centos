@@ -1,129 +1,61 @@
+################
+##   Master   ##
+################
 
-# 0. Upgrade docker, if needed. For that:
-NODE=node1
-# Note: the upgrade of vocon-63432111 was getting too complicated, so I have installed kube anew on that machine (2021-10-29); 
-#  I dit not follow the instructions of the current file "66_update_kubeadm.sh.manual"
-#  NODE=vocon-63432111
-kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data || kubectl drain $NODE --ignore-daemonsets
-OLD_PACKAGES=$(sudo yum list installed | egrep "docker" | awk '{print $1}')
-for PACKAGE in ${OLD_PACKAGES}; do
-  echo "PACKAGE=${PACKAGE}"
-  sudo yum remove -y "${PACKAGE}" && echo removed package ${PACKAGE}
-done
-sudo bash 1_install_docker.sh
-kubectl uncordon $NODE
+# Set manually:
+TARGET_MAJOR_VERSIION=1.23
+  # Note: 1.24 is unstable (2022-11-04)
 
-# 1. Update kubeadm
-# on master:
-# 1.1 manually create a snapshot/backup
-# then:
-# 1.2.1 install latest kubeadm
-sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes
-# they write on https://v1-21.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
-# "find the latest 1.22 version in the list"
-# However, the latest version I can find is 1.20.4. Do I need to update to 1.20.4 first?
-# do I need to install kubeadm 1.22 before I can see the 1.22 versions in the list?
-# then
-# 1.2.2 upgrade plan
+# Initialize and Show Upgrade Plan
+TARGET_VERSION=$(sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes \
+  | grep ${TARGET_MAJOR_VERSION} | tail -1 | awk '{print $2}' | cut -d- -f1)
+sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
 sudo kubeadm upgrade plan
-# got following info: update to 1.20.9, but install kubeadm 1.20.9 first!
-# PROBLEM: after having updated to 1.21.12, I get: "remote version is much newer: v1.24.0; falling back to: stable-1.21"
-# SOLUTION: sudo yum remove -y kubeadm-1.24.0-0 --disableexcludes=kubernetes; sudo yum install -y kubeadm-1.22.9-0 --disableexcludes=kubernetes; sudo kubeadm upgrade plan
 
-# 1.2.3 update kubeadm
-sudo yum install -y kubeadm-1.20.9-0 --disableexcludes=kubernetes
-# 1.2.4 Update to 1.20.9:
-# on master and nodes:
-sudo kubeadm config images pull # for pre-fetching the required images
+# Drain
+kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force
 
-# on master only: upgrade kubeadm
-sudo kubeadm upgrade apply v1.20.9
+# Upgrade
+sudo kubeadm upgrade apply ${TARGET_VERSION}
+sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
 
-# update config:
+# Uncordon
+kubectl uncordon $(hostname)
+
+# Check
+kubectl get nodes
+
+# Update config
+#  (if needed)
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config  
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-# on the nodes only:
+################
+##   Agents   ##
+################
+
+# Set manually:
+TARGET_MAJOR_VERSIION=1.23
+  # Note: 1.24 is unstable (2022-11-04)
+
+# Drain
+kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force || kubectl drain $(hostname) --ignore-daemonsets
+
+# Upgrade
 sudo kubeadm upgrade node
-# 1.5 drain agents:
-#kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
-kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data || kubectl drain $NODE --ignore-daemonsets
-# 1.6 On master and nodes: update kubelet and kubectl 
-#sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
-sudo yum install -y kubelet-1.20.9-0 kubectl-1.20.9-0 --disableexcludes=kubernetes
-# 1.7 Restart the kubelet
-# on master and nodes:
+TARGET_VERSION=$(sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes \
+  | grep ${TARGET_MAJOR_VERSION} | tail -1 | awk '{print $2}' | cut -d- -f1)
+sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
-# 1.8 Check versions
+
+# Uncordon
+kubectl uncordon $(hostname)
+
+# Check
 kubectl get nodes
-# output:
-# NAME      STATUS                     ROLES                  AGE    VERSION
-# master1   Ready                      control-plane,master   222d   v1.20.9
-# node1     Ready,SchedulingDisabled   <none>                 222d   v1.20.9
 
-# 1.9 on nodes:
-#kubectl uncordon dev-node1
-kubectl uncordon $NODE
-
-# 2. Repeat the 1 steps for 1.21.3
-# master:
-sudo yum install -y kubeadm-1.21.3-0 --disableexcludes=kubernetes
-sudo kubeadm upgrade apply v1.21.3
-# node: (I have waited, until the master was upgraded, before performing the next step:)
-sudo kubeadm upgrade node
-# any:
-kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data
-# master and nodes:
-sudo yum install -y kubelet-1.21.3-0 kubectl-1.21.3-0 --disableexcludes=kubernetes
-sudo systemctl daemon-reload
-sudo systemctl restart kubelet
-# any:
-kubectl get nodes
-# NAME      STATUS                     ROLES                  AGE    VERSION
-# master1   Ready                      control-plane,master   222d   v1.21.3
-# node1     Ready,SchedulingDisabled   <none>                 222d   v1.21.3
-
-# check renewed certificate:
-
-sudo kubeadm certs check-expiration
-# [check-expiration] Reading configuration from the cluster...
-# [check-expiration] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
-# 
-# CERTIFICATE                EXPIRES                  RESIDUAL TIME   CERTIFICATE AUTHORITY   EXTERNALLY MANAGED
-# admin.conf                 Aug 08, 2022 11:29 UTC   364d                                    no
-# apiserver                  Aug 08, 2022 11:28 UTC   364d            ca                      no
-# apiserver-etcd-client      Aug 08, 2022 11:28 UTC   364d            etcd-ca                 no
-# apiserver-kubelet-client   Aug 08, 2022 11:28 UTC   364d            ca                      no
-# controller-manager.conf    Aug 08, 2022 11:28 UTC   364d                                    no
-# etcd-healthcheck-client    Aug 08, 2022 10:49 UTC   364d            etcd-ca                 no
-# etcd-peer                  Aug 08, 2022 10:49 UTC   364d            etcd-ca                 no
-# etcd-server                Aug 08, 2022 10:49 UTC   364d            etcd-ca                 no
-# front-proxy-client         Aug 08, 2022 11:28 UTC   364d            front-proxy-ca          no
-# scheduler.conf             Aug 08, 2022 11:29 UTC   364d                                    no
-# 
-# CERTIFICATE AUTHORITY   EXPIRES                  RESIDUAL TIME   EXTERNALLY MANAGED
-# ca                      Dec 26, 2030 19:04 UTC   9y              no
-# etcd-ca                 Dec 26, 2030 19:04 UTC   9y              no
-# front-proxy-ca          Dec 26, 2030 19:04 UTC   9y              no
-
-# Then: perform smoke tests
-
-
-# upgrade iDEV v1.21.12 to v1.22.9:
-sudo yum install -y kubeadm-1.22.9-0 --disableexcludes=kubernetes # on all machines (also on the worker nodes, because we need it for pre-downloading the images)
-sudo kubeadm upgrade plan # master
-sudo kubeadm config images pull # on all machines
-sudo kubeadm upgrade apply v1.22.9 # on master
-k get nodes
-kubectl drain dev-node1 --ignore-daemonsets --delete-emptydir-data
-kubectl drain dev-node2 --ignore-daemonsets --delete-emptydir-data
-sudo yum install -y kubelet-1.22.9-0 kubectl-1.22.9-0 --disableexcludes=kubernetes # on all machines
-sudo systemctl daemon-reload # on all machines
-sudo systemctl restart kubelet # on all machines
-k get nodes
-sudo kubeadm certs check-expiration # on master
-kubectl uncordon dev-node1 # on master
-kubectl uncordon dev-node2 # on master
 
