@@ -57,9 +57,21 @@ $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 $(df | grep -v docker | grep -v containerd)
 "
 
+#$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8
-$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | head -8)
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' # enriched with NODE
+$(
+  (
+  SORT=memory
+  echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
+  kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep '^NAME|intellij-desktop' \
+    | while read LINE; 
+      do 
+        NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}')
+        echo "$LINE      $NODE"; 
+      done
+  ) | column -t
+) 
 "
 
   OUT="$OUT
@@ -92,6 +104,11 @@ $(curl -s -L cloud.vocon-it.com | grep -q IntellijFrontend \
   OUT="$OUT
 $(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
 $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
+"
+
+  OUT="$OUT
+Non-Running PODs in kube-system Namespace:
+$(kubectl -n kube-system get pod | egrep -v 'Running')
 "
 
   clear
