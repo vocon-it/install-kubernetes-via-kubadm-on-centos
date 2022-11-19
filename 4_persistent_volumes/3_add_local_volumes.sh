@@ -3,6 +3,14 @@
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
 OFFSET=${OFFSET:=0}
 
+toLowerFirstChar() {
+  _a=${1,}; echo ${_a:0:1}
+}
+
+isNotYes() {
+  _a=${1,}; [ "${_a:0:1}" != "y" ]
+}
+
 # create template
 cat > persistentVolume.yaml.tmpl << 'EOF'
 apiVersion: v1
@@ -38,6 +46,9 @@ export NODE=$(hostname)
 echo DISK=$DISK
 echo VOLUME_NAME_PREFIX=$VOLUME_NAME_PREFIX
 echo NODE=$NODE
+
+read -p 'Execute? (y/n) ' answer
+isNotYes $answer && echo exiting... && exit
 
 for i in $(seq $OFFSET $((OFFSET + NUMBER_OF_VOLUMES -1)));
 do
