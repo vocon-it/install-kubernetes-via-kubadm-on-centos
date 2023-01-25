@@ -112,6 +112,13 @@ $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | s
 $([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A | egrep -v ${EXCLUDE_PATTERN})
 "
 
+  # Warning: high number of PODs on the current host
+  WARNING_THRESHOLD=90
+  OUT="$OUT
+$([ "$(kubectl get pods -A -o wide | grep $(hostname) | grep Running | wc -l)" -ge ${WARNING_THRESHOLD} ] && echo "Warning: high number of PODs on the current host $(hostname): $(kubectl get pods -A -o wide | grep $(hostname) | grep Running | wc -l)/110 !!!!!!!!!!!!!!!!!!!!!!!!")
+"
+ 
+
   clear
   echo "$OUT"
   sleep 2
