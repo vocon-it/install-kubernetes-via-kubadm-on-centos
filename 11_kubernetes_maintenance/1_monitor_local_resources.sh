@@ -106,9 +106,10 @@ $(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intelli
 $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
+  # "Errored" PODs, if present:
+  EXCLUDE_PATTERN='Running|Completed|Terminating'
   OUT="$OUT
-Non-Running PODs in kube-system Namespace:
-$(kubectl -n kube-system get pod | egrep -v 'Running')
+$([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A | egrep -v ${EXCLUDE_PATTERN})
 "
 
   clear
