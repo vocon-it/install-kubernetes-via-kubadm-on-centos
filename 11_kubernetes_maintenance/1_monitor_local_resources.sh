@@ -120,7 +120,8 @@ $([ "$(kubectl get pods -A -o wide | grep $(hostname) | grep Running | wc -l)" -
  
 
   clear
-  echo "$OUT"
+  # with removal of trailing empty lines:
+  echo "$OUT" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
   sleep 2
 done
 
