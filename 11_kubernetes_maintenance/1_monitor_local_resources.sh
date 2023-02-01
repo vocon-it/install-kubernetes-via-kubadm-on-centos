@@ -107,7 +107,7 @@ $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | s
 "
 
   # "Errored" PODs, if present:
-  EXCLUDE_PATTERN='Running|Completed|Terminating'
+  EXCLUDE_PATTERN='Running|Completed|Terminating|ContainerCreating'
   OUT="$OUT
 $([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A | egrep -v ${EXCLUDE_PATTERN})
 "
