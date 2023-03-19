@@ -8,7 +8,7 @@ sudo echo supported > /dev/null 2>/dev/null || alias sudo=$@
 
 # remove unused images:
 sudo crictl rmi --prune
-docker -v && echo docker system prune --all
+docker -v && docker system prune --all
 
 # pre-fetch container images (latest images and all images used in get-desktop): 
 _PREFETCH_IMAGES=$(kubectl -n get-desktop get deploy -o yaml | egrep 'IMAGE$' -A 1 | grep value | awk '{print $2}')
