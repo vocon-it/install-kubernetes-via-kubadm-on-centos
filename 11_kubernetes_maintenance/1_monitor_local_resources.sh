@@ -30,6 +30,21 @@ find-available-volumes-of-the-current-host() {
     | printname
 }
 
+ktop ()
+{
+    # prints k top pod -A, enriched with node information
+    # try: ktop memory intellij-desktop (default) or ktop cpu kube-system
+    ( SORT=$1;
+    SORT=${SORT:=memory};
+    PATTERN=$2;
+    PATTERN=${PATTERN:=intellij-desktop};
+    echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
+    kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep --color=auto "^NAME|${PATTERN}" | while read LINE; do
+        NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}');
+        echo "$LINE      $NODE";
+    done ) | column -t
+}
+
 
 
 while true; do
@@ -60,18 +75,7 @@ $(df | grep -v docker | grep -v containerd)
 #$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
 kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' # enriched with NODE
-$(
-  (
-  SORT=memory
-  echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
-  kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep '^NAME|intellij-desktop' \
-    | while read LINE; 
-      do 
-        NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}')
-        echo "$LINE      $NODE"; 
-      done
-  ) | column -t
-) 
+$(ktop memory intellij-desktop)
 "
 
   OUT="$OUT
