@@ -1,16 +1,69 @@
 ################
+################
 ##   Master   ##
 ################
+################
 
-# Set manually:
-TARGET_MAJOR_VERSIION=1.23
-  # Note: 1.24 is unstable (2022-11-04)
+#############
+# Functions #
+#############
+
+target_version() {
+  sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes \
+    | grep ${TARGET_MAJOR_VERSION} | tail -1 | awk '{print $2}' | cut -d- -f1
+}
+
+update_kubectl_via_curl() {
+  # Install correct kubectl version (see: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/):
+  # if done after `sudo kubeadm upgrade plan`, following command seems to work:
+  #   sudo yum install -y kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+  # but I have seen situations, where the command has returned "version not found"
+  # In this case, the curl-way of installation works better:
+  usage() {
+    echo "TARGET_VERSION=1.24.6 update_kubectl"
+  }
+
+  _TARGET_VERSION=${TARGET_VERSION}
+  if [ "${_TARGET_VERSION}" == "" ]; then
+    usage >&2
+    return 1
+  fi
+  
+  curl -LO "https://dl.k8s.io/release/v${_TARGET_VERSION}/bin/linux/amd64/kubectl"
+  chmod +x kubectl
+  sudo mv kubectl /usr/local/bin/kubectl
+  kubectl version --short
+}
+
+#################
+# MAIN (manual) #
+#################
+
+# Check current version:
+kubectl version --short
+
+#  Choose the same MAJOR version as the current version first in order to update to the lates bugfix version
+#  Then rerun the whole script with the next higher MAJOR version
+TARGET_MAJOR_VERSION=1.24
 
 # Initialize and Show Upgrade Plan
-TARGET_VERSION=$(sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes \
-  | grep ${TARGET_MAJOR_VERSION} | tail -1 | awk '{print $2}' | cut -d- -f1)
+TARGET_VERSION=$(target_version)
+echo $TARGET_VERSION
+
+# This step is not needed. There is no need to upgrade kubectl before we upgrade kubernetes:
+#   update_kubectl_via_curl
+
 sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
 sudo kubeadm upgrade plan
+
+# Sometimes it is needed to rerun target_version, kubeadm upgrade and kubeadm upgrade plan to get the latest version:
+TARGET_VERSION_OLD=$TARGET_VERSION
+TARGET_VERSION=$(target_version)
+if [ "${TARGET_VERSION}" != "${TARGET_VERSION_OLD}" ]; then
+  echo $TARGET_VERSION
+  sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+  sudo kubeadm upgrade plan
+fi
 
 # Drain
 kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force
@@ -21,7 +74,26 @@ sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --di
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
-# Uncordon
+# Check:
+sudo systemctl status kubelet
+  # In case of follwing error
+  #   Mar 25 19:29:30 dev-master1 kubelet[28603]: Error: failed to parse kubelet flag: unknown flag: --network-plugin
+  #
+  # it can be solved by (see https://serverfault.com/questions/1104591/error-failed-to-parse-kubelet-flag-unknown-flag-network-plugin):
+  # (works only on master)
+  #   sudo kubeadm init phase kubelet-start
+  # and then again:
+  #   sudo systemctl daemon-reload
+  #   sudo systemctl restart kubelet
+  #   sudo systemctl status kubelet
+  #   kubectl get nodes
+kubectl get nodes
+  # In case of the error "Unable to connect to the server: net/http: TLS handshake timeout",
+  # you need to update the .kube/config file like follows:
+  #   sudo cp -p /etc/kubernetes/admin.conf ~/.kube/config
+  #   sudo chown centos:centos ~/.kube/config
+
+# Uncordon (also on master)
 kubectl uncordon $(hostname)
 
 # Check
@@ -37,25 +109,69 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ##   Agents   ##
 ################
 
-# Set manually:
-TARGET_MAJOR_VERSIION=1.23
-  # Note: 1.24 is unstable (2022-11-04)
+# Set manually (same version as on master):
+# TARGET_VERSION=1.24.12
+TARGET_VERSION=v1.24.12
+TARGET_VERSION=$(echo ${TARGET_VERSION} | sed 's/v//')
+echo $TARGET_VERSION
 
 # Drain
 kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force || kubectl drain $(hostname) --ignore-daemonsets
 
-# Upgrade
-sudo kubeadm upgrade node
-TARGET_VERSION=$(sudo yum list --showduplicates kubeadm --disableexcludes=kubernetes \
-  | grep ${TARGET_MAJOR_VERSION} | tail -1 | awk '{print $2}' | cut -d- -f1)
 sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo kubeadm upgrade node
+
+sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
+
+# Check:
+sudo systemctl status kubelet
+  # In case of follwing error
+  #   Mar 25 19:29:30 dev-master1 kubelet[28603]: Error: failed to parse kubelet flag: unknown flag: --network-plugin
+  #
+  # it can be solved by (see https://serverfault.com/questions/1104591/error-failed-to-parse-kubelet-flag-unknown-flag-network-plugin):
+  # (works only on master)
+  #   sudo cp -p /var/lib/kubelet/kubeadm-flags.env /var/lib/kubelet/kubeadm-flags.env.bak
+  #   sudo vi /var/lib/kubelet/kubeadm-flags.env 
+  # and I have replaced the contents of the file by the same contents I have found on the master
+  # and then again:
+  #   sudo systemctl daemon-reload
+  #   sudo systemctl restart kubelet
+  #   sudo systemctl status kubelet
+  #   kubectl get nodes
+kubectl get nodes
+
+# update containerd, if needed:
+sudo yum update containerd
+#
+# proceed with typing "y"<return>, if the offered version is OK
+#
+# restart containerd
+#
+sudo systemctl daemon-reload
+sudo systemctl enable containerd
+sudo systemctl stop containerd
+sudo systemctl start containerd
+sleep 5
+sudo systemctl status containerd
+#
+# restart kubelet
+#
+sudo systemctl restart kubelet
+sleep 5
+sudo systemctl status kubelet
+#
+# check
+#
+kubectl get nodes
+
 
 # Uncordon
 kubectl uncordon $(hostname)
 
 # Check
 kubectl get nodes
+
 
 
