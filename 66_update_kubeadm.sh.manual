@@ -110,7 +110,9 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ################
 
 # Set manually (same version as on master):
-TARGET_VERSION=1.23.17
+# TARGET_VERSION=1.24.12
+TARGET_VERSION=v1.24.12
+TARGET_VERSION=$(echo ${TARGET_VERSION} | sed 's/v//')
 echo $TARGET_VERSION
 
 # Drain
@@ -132,7 +134,6 @@ sudo systemctl status kubelet
   # (works only on master)
   #   sudo cp -p /var/lib/kubelet/kubeadm-flags.env /var/lib/kubelet/kubeadm-flags.env.bak
   #   sudo vi /var/lib/kubelet/kubeadm-flags.env 
-  #   sudo kubeadm init phase kubelet-start
   # and I have replaced the contents of the file by the same contents I have found on the master
   # and then again:
   #   sudo systemctl daemon-reload
@@ -141,10 +142,36 @@ sudo systemctl status kubelet
   #   kubectl get nodes
 kubectl get nodes
 
+# update containerd, if needed:
+sudo yum update containerd
+#
+# proceed with typing "y"<return>, if the offered version is OK
+#
+# restart containerd
+#
+sudo systemctl daemon-reload
+sudo systemctl enable containerd
+sudo systemctl stop containerd
+sudo systemctl start containerd
+sleep 5
+sudo systemctl status containerd
+#
+# restart kubelet
+#
+sudo systemctl restart kubelet
+sleep 5
+sudo systemctl status kubelet
+#
+# check
+#
+kubectl get nodes
+
+
 # Uncordon
 kubectl uncordon $(hostname)
 
 # Check
 kubectl get nodes
+
 
 
