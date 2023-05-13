@@ -13,3 +13,9 @@ docker -v && docker system prune --all --force
 # pre-fetch container images (latest images and all images used in get-desktop): 
 _PREFETCH_IMAGES=$(kubectl -n get-desktop get deploy -o yaml | egrep 'IMAGE$' -A 1 | grep value | awk '{print $2}')
 sudo bash 3_pre-pull-images.sh kasmweb/desktop-deluxe:1.11.0 vocon/intellij-desktop:latest vocon/deploy-intellij-desktop:latest vocon/idle-timeout:latest $_PREFETCH_IMAGES
+
+
+# remove obsolete namespaces:
+OBSOLETE_NAMESPACES="$(kubectl get ns | egrep -v "^NAME|default" | awk '{print $1}' | while read NS; do echo "$NS $(kubectl -n $NS get pvc | grep -v NAME | awk '{print $1" "$2}' || echo pvc deleted)"; done | grep "intellij-desktop Pending" | awk '{print$1}')"
+kubectl delete $OBSOLETE_NAMESPACES
+
