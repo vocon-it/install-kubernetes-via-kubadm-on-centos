@@ -3,6 +3,7 @@
 [ "${REPAIR}" != "" ] && DRY_RUN=${DRY_RUN:=true} && DEBUG=true && DATE_RELATIVE="0 days ago"
 DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
 DELETE_PV=${DELETE_PV:=false}
+DELETE_NAMESPACE=${DELETE_NAMESPACE:=true}
 DRY_RUN=${DRY_RUN:=false}
 BACKUP_PATH="${BACKUP_PATH:=${HOME}/volume-yamls}"
 
@@ -346,6 +347,10 @@ find-bound-volumes-of-the-current-host | egrep -v '^vol22$'  \
           echo
           clean-volume-and-disk-and-pvc $_VOL
           echo ${_PVC_NAMESPACE} >> ~/.cleaned_namespaces
+
+          if [ "${DELETE_NAMESPACE}" == "true" ]; then
+            kubectl delete ns "${_PVC_NAMESPACE}" || echo "Error: failed deleting namespace ${_PVC_NAMESPACE}"
+          fi 
         fi
       fi
     done
