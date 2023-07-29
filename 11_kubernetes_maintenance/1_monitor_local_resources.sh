@@ -126,8 +126,8 @@ $([ "$(kubectl get pods -A -o wide | grep $(hostname) | grep Running | wc -l)" -
  
 
   clear
-  # with removal of trailing empty lines:
-  echo "$OUT" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+  # with removal of colors and with removal of trailing empty lines:
+  echo "$OUT" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
   sleep 2
 done
 
