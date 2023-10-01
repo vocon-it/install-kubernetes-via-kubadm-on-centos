@@ -43,7 +43,7 @@ if [ "$NAMESPACES_TO_BE_CLEANED" != "" ]; then
   echo "NAMESPACES_TO_BE_CLEANED:"
   echo "$NAMESPACES_TO_BE_CLEANED"
   echo "$NAMESPACES_TO_BE_CLEANED" \
-  | while read n; do k -n $n delete ingress intellij-desktop; sleep 1; done
+  | while read n; do kubectl -n $n delete ingress intellij-desktop; sleep 1; done
 else
   echo no NAMESPACES_TO_BE_CLEANED found
 fi
