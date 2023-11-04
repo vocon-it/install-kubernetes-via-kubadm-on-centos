@@ -112,10 +112,10 @@ $(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intelli
 $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
-  # "Errored" PODs, if present:
+  # "Errored" PODs, if present (newest first):
   EXCLUDE_PATTERN='Running|Completed|Terminating|ContainerCreating'
   OUT="$OUT
-$([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A | egrep -v ${EXCLUDE_PATTERN})
+$([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A --sort-by=.status.startTime | ( head -1; tac ) | egrep -v ${EXCLUDE_PATTERN})
 "
 
   # Warning: high number of PODs on the current host
