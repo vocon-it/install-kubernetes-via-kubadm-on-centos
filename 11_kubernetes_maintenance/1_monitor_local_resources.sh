@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 NODE=$(hostname)
+ENVIRONMENT=$(echo "$NODE" | egrep -q '^dev-' && echo dev || echo prod)
+SUBDOMAIN=$(
+  [ "$ENVIRONMENT" == "prod" ] && echo ""
+  [ "$ENVIRONMENT" == "dev" ] && echo "dev."
+)
 
 find-available-volumes-of-the-current-host() {
   get-persistent-volumes() {
@@ -49,6 +54,7 @@ ktop ()
 
 while true; do
   OUT="watch: $0
+### ENVIRONMENT=${ENVIRONMENT} ###
 "
 
   TOTAL_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep -v memory | wc -l)
@@ -97,25 +103,30 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
-  OUT="$OUT
-$(curl -s -L cloud.vocon-it.com | grep -q IntellijFrontend \
-  || (
-      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
-      echo '!!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.vocon-it.com !!!!!!!!!!!!!'
-      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
-     )
- )
+  curl -s -L cloud.${SUBDOMAIN}vocon-it.com | grep -q IntellijFrontend \
+  || OUT="$OUT
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+!!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.${SUBDOMAIN}vocon-it.com
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+"
+
+  curl -s -L get-desktop.${SUBDOMAIN}vocon-it.com | grep -q 401 \
+  || OUT="$OUT
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop.${SUBDOMAIN}vocon-it.com
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
 
   OUT="$OUT
-$(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
-$(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
+Letsencrypt (https) expire dates on ${ENVIRONMENT}:
+$(curl https://cloud.${SUBDOMAIN}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
+$(curl https://get-desktop.${SUBDOMAIN}vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
-  # "Errored" PODs, if present:
+  # "Errored" PODs, if present (newest first):
   EXCLUDE_PATTERN='Running|Completed|Terminating|ContainerCreating'
   OUT="$OUT
-$([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A | egrep -v ${EXCLUDE_PATTERN})
+$([ "$(kubectl get pod -A | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -gt 1 ] && echo "Errored PODs:" && kubectl get pod -o wide -A --sort-by=.status.startTime | ( head -1; tac ) | egrep -v ${EXCLUDE_PATTERN})
 "
 
   # Warning: high number of PODs on the current host
