@@ -1,3 +1,2 @@
 0 2 * * * hwclock --hctosys
 0 4 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/2_nightly_cron_job_master.sh
-*/5 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/6_recreate_CNAME_record_for_get-desktop_if_missing_master.sh
