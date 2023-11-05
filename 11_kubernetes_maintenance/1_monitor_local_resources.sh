@@ -108,6 +108,16 @@ $(curl -s -L cloud.vocon-it.com | grep -q IntellijFrontend \
 "
 
   OUT="$OUT
+$(curl -s -L get-desktop.vocon-it.com | grep -q 401 \
+  || (
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
+      echo '!!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop.vocon-it.com !!!!!!!!!!!!!'
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; 
+     )
+ )
+"
+
+  OUT="$OUT
 $(curl https://cloud.vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
 $(curl https://get-desktop.vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
