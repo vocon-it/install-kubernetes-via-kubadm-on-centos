@@ -1,0 +1,3 @@
+0 2 * * * hwclock --hctosys
+0 4 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/2_nightly_cron_job_master.sh
+*/2 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/7_cron_crypto_delete_master.sh
