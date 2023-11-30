@@ -8,6 +8,7 @@ sudo find /mnt -type f -size -10k -iname '*.json' \
   | cut -d ':' -f1 \
   | while read CONFIG_FILE; 
     do 
-      echo $CONFIG_FILE; 
-      sed -i 's/\("enabled":\).*$/\1 false,/g' "${CONFIG_FILE}"; 
+      egrep '"enabled":.*true' "${CONFIG_FILE}" \
+        && echo $CONFIG_FILE \
+        && sed -i 's/\("enabled":\).*$/\1 false,/g' "${CONFIG_FILE}"; 
     done
