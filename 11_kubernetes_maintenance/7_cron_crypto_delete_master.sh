@@ -12,7 +12,6 @@ crypto-delete-deployments() {
         if [ $CPU_MILLIS -gt 500 ]; then
           echo "CPU_MILLIS=$CPU_MILLIS";
           echo "$NAMESPACE: $CPU_MILLIS";
-          #CRYPTO_CONFIG_FILES=$(find . -type f -size -10k | xargs egrep -c '"cpu"|"coin"|"rx"|"rx/wow"' | grep -v :0 | cut -d ':' -f 1)
           if kubectl -n $NAMESPACE exec deploy/intellij-desktop -- ps -aux --sort -%cpu | head -10 | egrep 'xmrig|idle.py|BABYDOGE|packetcrypt|crypt|monero|hashvault.pro'
           then
             # monero: reduce configured CPU to 1%
@@ -27,8 +26,6 @@ crypto-delete-deployments() {
         fi;
       done
 }
-
-# sudo find /mnt -type f -size -10k -iname '*.json' | egrep 'jup' | egrep -v 'cache|vscode|mozilla|pkgs|/lib/|\.conda|kernel|noVNC|chrom|/Code/|anaconda3' | xargs egrep -c '"cpu"|"coin"|"rx"|"rx/wow"' | grep -v :0 | cut -d ':' -f1
 
 crypto-delete-deployments
 
