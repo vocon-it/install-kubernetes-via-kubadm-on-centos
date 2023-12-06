@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-CLOUDFLARE_API_TOKEN=scBFFQEPdFTtvmdg-qLFcrgPbONMNEzHX-r8ab6E
-
 #
 # run in the directory, where $0 is located:
 #
@@ -40,33 +38,10 @@ else
 fi
 
 #
-# Detect Namespaces and Cloudflare CNAMEs to be cleaned
+# Detect Namespaces to be cleaned
 #
 
 NAMESPACES_TO_BE_CLEANED=$(kubectl get ingress -A | egrep ' intellij-desktop .*[1-9][0-9]+d$' | egrep -v ${EXCLUDE_PATTERN} | cut -d' ' -f 1)
-
-CLOUDFLARE_CNAMES_TO_BE_CLEANED__NAME_ID="$(
-  curl -s -X GET "https://api.cloudflare.com/client/v4/zones/2dd13f4d5a72b13e8684c850823795d4/dns_records?type=CNAME&match=all&per_page=1000" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-    -H "Content-Type: application/json" \
-    | jq -r '.result[] | { name: .name, id: .id } | join(" ")' \
-    | egrep '^intellij-desktop-' \
-    | egrep -v "${EXCLUDE_PATTERN}"
-  )"
-
-#
-# Delete obsolete Cloudflare entries
-#
-
-echo "$CLOUDFLARE_CNAMES_TO_BE_CLEANED__NAME_ID" \
-  | while read NAME ID; 
-    do 
-      echo
-      echo "$NAME   $ID"; 
-      curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/2dd13f4d5a72b13e8684c850823795d4/dns_records/${ID}" \
-        -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-        -H "Content-Type: application/json"
-    done
 
 #
 # Delete obsolete ingresses:
