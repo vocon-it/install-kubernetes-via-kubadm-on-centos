@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+export PATH="${PATH}:/usr/sbin"
 CLOUDFLARE_API_TOKEN=scBFFQEPdFTtvmdg-qLFcrgPbONMNEzHX-r8ab6E
 
 NAMESPACES_TO_BE_EXCLUDED_BECAUSE_IS_ACTIVE="$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep ' intellij-desktop' | awk '{print $1}')"
