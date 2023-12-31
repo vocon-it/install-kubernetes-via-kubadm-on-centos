@@ -44,7 +44,7 @@ kubectl version --short
 
 #  Choose the same MAJOR version as the current version first in order to update to the lates bugfix version
 #  Then rerun the whole script with the next higher MAJOR version
-TARGET_MAJOR_VERSION=1.26
+TARGET_MAJOR_VERSION=1.25
 
 # Initialize and Show Upgrade Plan
 TARGET_VERSION=$(target_version)
