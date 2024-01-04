@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# If you eant .kube to be created for a non-root user, then run this script as the non-root user:
+# If you want .kube to be created for a non-root user, then run this script as the non-root user:
 
 #APISERVER_ADVERTISE_ADDRESS=${APISERVER_ADVERTISE_ADDRESS:=$(hostname)}
 #  --apiserver-advertise-address=${APISERVER_ADVERTISE_ADDRESS} \
@@ -8,19 +8,24 @@
 CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname -f)}
 
 # prerequisite: switch on routing
-cat /proc/sys/net/ipv4/ip_forward | grep 1 || echo "1" | sudo tee cat /proc/sys/net/ipv4/ip_forward
+#cat /proc/sys/net/ipv4/ip_forward | grep 1 || echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward
+cat /proc/sys/net/ipv4/ip_forward | grep 1 || sudo sysctl -w net.ipv4.ip_forward=1
+#cat /proc/sys/net/ipv6/conf/all/forwarding | grep 1 || echo "1" | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
+cat /proc/sys/net/ipv6/conf/all/forwarding | grep 1 || sudo sysctl -w net.ipv6.conf.all.forwarding=1
 
 sudo kubeadm init \
   --kubernetes-version $(kubeadm version -o short) \
-  --pod-network-cidr=10.244.0.0/16 \
   --control-plane-endpoint=${CONTROL_PLANE_ENDPOINT} \
   --ignore-preflight-errors=NumCPU \
+  --pod-network-cidr=10.244.0.0/16,2001:db8:42:0::/56 \
+  --service-cidr=10.96.0.0/16,2001:db8:42:1::/112 \
   --dry-run \
   && sudo kubeadm init \
     --kubernetes-version $(kubeadm version -o short) \
-    --pod-network-cidr=10.244.0.0/16 \
     --control-plane-endpoint=${CONTROL_PLANE_ENDPOINT} \
     --ignore-preflight-errors=NumCPU \
+    --pod-network-cidr=10.244.0.0/16,2001:db8:42:0::/56 \
+    --service-cidr=10.96.0.0/16,2001:db8:42:1::/112 \
      | sudo tee /tmp/kubeinit.log \
   && echo "Note: the full initialization log can be found on /tmp/kubeinit.log" \
   && mkdir -p $HOME/.kube \

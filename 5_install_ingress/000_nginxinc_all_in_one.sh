@@ -1,3 +1,11 @@
+#set -e
+#
+#cd
+#git clone https://github.com/nginxinc/kubernetes-ingress.git
+#cd kubernetes-ingress
+#git checkout release-1.12
+#
+#exit 0
 
 # Install NginX INC Controller 
 # Official Documentation: see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests
