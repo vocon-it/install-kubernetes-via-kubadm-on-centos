@@ -44,7 +44,8 @@ kubectl version --short
 
 #  Choose the same MAJOR version as the current version first in order to update to the lates bugfix version
 #  Then rerun the whole script with the next higher MAJOR version
-TARGET_MAJOR_VERSION=1.28
+TARGET_MAJOR_VERSION=1.24
+TARGET_MAJOR_VERSION=1.25
 
 # Initialize and Show Upgrade Plan
 TARGET_VERSION=$(target_version)
@@ -115,7 +116,8 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # Set manually (same version as on master):
 # TARGET_VERSION=1.24.12
-TARGET_VERSION=v1.24.12
+#TARGET_VERSION=v1.24.17
+TARGET_VERSION=v1.25.14
 TARGET_VERSION=$(echo ${TARGET_VERSION} | sed 's/v//')
 echo $TARGET_VERSION
 
