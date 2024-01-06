@@ -73,6 +73,9 @@ echo "--------------------"
 echo "--- INIT KUBEADM ---"
 echo "--------------------"
 echo
+
+echo "TODO: how to define a FQDN, so the FQDN is used in the config with a valid certificate"
+echo "exiting, since this is not yet done" && exit 1
 if [ "${MASTER}" == "true" ]; then
   bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
 else
@@ -84,7 +87,9 @@ echo "--- DEPLOY OVERLAY NETWORK ---"
 echo "------------------------------"
 echo
 if [ "${MASTER}" == "true" ]; then
-  bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+  # TODO: CAAS-1660: test and clean!
+  #bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+  bash 2_install_kubeadm/4_deploy_overlay_networki_calico_dual_stack.sh || false
 else
   echo "The node is no master. Skipping this step."
 fi

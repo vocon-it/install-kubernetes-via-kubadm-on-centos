@@ -2,10 +2,14 @@
 
 # If you want .kube to be created for a non-root user, then run this script as the non-root user:
 
-#APISERVER_ADVERTISE_ADDRESS=${APISERVER_ADVERTISE_ADDRESS:=$(hostname)}
-#  --apiserver-advertise-address=${APISERVER_ADVERTISE_ADDRESS} \
+DOMAIN=${DOMAIN:=vocon-it.com}
 
+[ "$(hostname)" == "$(hostname -f)" ] && echo please spedify the fully qualified domain name in /etc/hosts first && exit 1
 CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:=$(hostname -f)}
+
+# not needed?
+#APISERVER_ADVERTISE_ADDRESS=${APISERVER_ADVERTISE_ADDRESS:=$(hostname -f)}}
+#  --apiserver-advertise-address=${APISERVER_ADVERTISE_ADDRESS} \
 
 # prerequisite: switch on routing
 #cat /proc/sys/net/ipv4/ip_forward | grep 1 || echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward
