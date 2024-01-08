@@ -1,82 +1,39 @@
+set -e
 
-# Install NginX INC Controller 
-# Official Documentation: see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests
+# See https://docs.nginx.com/nginx-ingress-controller/installation/installing-nic/installation-with-manifests/
 
-usage() {
-  echo "usage: [NGINXINC_BRANCH=release-2.0] bash $0 [-d]"
-  echo "       -d delete"
-}
+NGINXINC_VERSION=${NGINXINC_VERSION:=3.4}
 
-[ $# -gt 1 ] && usage && exit 1
-[ $# -eq 1 ] && [ "$1" != "-d" ]  && usage && exit 1
+cd /tmp
+rm -rf kubernetes-ingress || true
+git clone https://github.com/nginxinc/kubernetes-ingress.git
+cd kubernetes-ingress
+git checkout release-${NGINXINC_VERSION}
 
-[ "$1" == "-d" ] && CMD=delete || CMD=apply
-#NGINXINC_BRANCH=master
-#NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-1.9} # Note: '1.9' is a moving target and it refers to 1.9.1, currently (as of 2021-01-03)
-NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-2.0} # Note: '2.0' is a moving target and it refers to 2.0.3, currently (as of 2021-11-06)
-BASE_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${NGINXINC_BRANCH}/deployments"
+# Set up role-based access control (RBAC)
+kubectl apply -f deployments/common/ns-and-sa.yaml
+kubectl apply -f deployments/rbac/rbac.yaml
+#  If you’re planning to use NGINX App Protect or NGINX App Protect DoS, additional roles and bindings are needed.
+kubectl apply -f deployments/rbac/ap-rbac.yaml
+kubectl apply -f deployments/rbac/apdos-rbac.yaml
 
-# choose the environment, where to deploy the NginX controller by choosing the KUBECONFIG file:
-DEPLOY_ON_ENVIRONMENT=${DEPLOY_ON_ENVIRONMENT:=local}
-toLower() {
-   sed -e 's/\(.*\)/\L\1/'
-}
-export KUBECONFIG=${KUBECONFIG:=$( [ "${DEPLOY_ON_ENVIRONMENT}" != "local" ] && echo ~/.kube/${DEPLOY_ON_ENVIRONMENT}-config | toLower || echo ~/.kube/config )}
+# Create common resources
+kubectl apply -f examples/shared-examples/default-server-secret/default-server-secret.yaml
+kubectl apply -f deployments/common/nginx-config.yaml
+kubectl apply -f deployments/common/ingress-class.yaml
 
-if [ "${NGINXINC_BRANCH}" == "release-1.9" ]; then
-  NAMESPACE_AND_SERVICEACCOUNT=common/ns-and-sa.yaml
-  RBAC="rbac/rbac.yaml rbac/ap-rbac.yaml"
-  COMMOM="common/default-server-secret.yaml common/nginx-config.yaml common/ingress-class.yaml"
-  CUSTOM_RESOURCES="common/vs-definition.yaml common/vsr-definition.yaml common/ts-definition.yaml common/policy-definition.yaml common/gc-definition.yaml common/global-configuration.yaml"
-  APP_PROJECT="common/ap-logconf-definition.yaml common/ap-policy-definition.yaml"
-  NGINX_INGRESS=daemon-set/nginx-ingress.yaml
-  ALL="$NAMESPACE_AND_SERVICEACCOUNT $RBAC $COMMOM $CUSTOM_RESOURCES $APP_PROJECT $NGINX_INGRESS"
-else # see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests as of 2021-11-06
-  ALL="
-      common/ns-and-sa.yaml
-      rbac/rbac.yaml
-      rbac/ap-rbac.yaml
-      common/default-server-secret.yaml
-      common/nginx-config.yaml
-      common/ingress-class.yaml
-      common/crds/k8s.nginx.org_virtualservers.yaml
-      common/crds/k8s.nginx.org_virtualserverroutes.yaml
-      common/crds/k8s.nginx.org_transportservers.yaml
-      common/crds/k8s.nginx.org_policies.yaml
-      common/crds/k8s.nginx.org_globalconfigurations.yaml
-      common/crds/appprotect.f5.com_aplogconfs.yaml
-      common/crds/appprotect.f5.com_appolicies.yaml
-      common/crds/appprotect.f5.com_apusersigs.yaml
-      daemon-set/nginx-ingress.yaml
-    "
-fi
+# Create custom resources
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.4.0/deploy/crds.yaml
+#   optional
+#     WAF
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.4.0/deploy/crds-nap-waf.yaml
+#     DoS
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.4.0/deploy/crds-nap-dos.yaml
 
-for YAML in $ALL
-do
-  if [ "${YAML}" == "daemon-set/nginx-ingress.yaml" ]; then
-    curl -s "${BASE_URL}/${YAML}" \
-      | sed 's/terminationMessagePolicy: File/terminationMessagePolicy: FallbackToLogsOnError/' \
-      | sed 's/^        args:/        args:\n          - -enable-snippets/' \
-      | kubectl ${CMD} -f -
-  else
-    kubectl ${CMD} -f "${BASE_URL}/${YAML}"
-  fi
-done
+# Deploy NGINX Ingress Controller
+#   Using a DaemonSet
+kubectl apply -f deployments/daemon-set/nginx-ingress.yaml
+kubectl apply -f deployments/daemon-set/nginx-plus-ingress.yaml
 
-if [ "${CMD}" == "apply" ]; then
-  verify_success() {
-    kubectl get pod -n nginx-ingress | grep Running
-  }
+watch kubectl get pods --namespace=nginx-ingress
 
-  for I in $(seq 1 10); do
-    verify_success && exit 0
-    sleep 10
-  done
-
-  echo "POD does not seem to start. Showing log."
-  POD=$(kubectl get pod -n nginx-ingress | grep nginx-ingress | head -1 | awk '{print $1}')
-  kubectl -n nginx-ingress describe pod $POD | grep -A 100 "Events:"
-
-  echo "If you reach here, then something went wrong in $0"
-  exit 1
-fi

@@ -39,12 +39,21 @@ fi
 sudo echo nothing 2>/dev/null 1>/dev/null || alias sudo='$@'
 
 echo "---------------------------------"
-echo "--- INSTALL DOCKER, IF NEEDED ---"
+echo "--- INSTALL CONTAINERD, IF NEEDED ---"
 echo "---------------------------------"
 echo
-sudo docker --version \
-  && echo "INFO: docker is already installed. Skipping this step..." \
-  || bash 1_install_docker.sh
+sudo containerd --version \
+  && echo "INFO: containerd is already installed. Skipping this step..." \
+  || bash 1_install_containerd.sh
+
+# Skipped for now...
+#echo "---------------------------------"
+#echo "--- INSTALL DOCKER, IF NEEDED ---"
+#echo "---------------------------------"
+#echo
+#sudo docker --version \
+#  && echo "INFO: docker is already installed. Skipping this step..." \
+#  || bash 1_install_docker.sh
 
 echo "----------------------------------"
 echo "--- INSTALL KUBEADM, IF NEEDED ---"
@@ -64,6 +73,9 @@ echo "--------------------"
 echo "--- INIT KUBEADM ---"
 echo "--------------------"
 echo
+
+echo "TODO: how to define a FQDN, so the FQDN is used in the config with a valid certificate"
+echo "exiting, since this is not yet done" && exit 1
 if [ "${MASTER}" == "true" ]; then
   bash 2_install_kubeadm/3_initialize_kubeadm.sh || false
 else
@@ -75,7 +87,9 @@ echo "--- DEPLOY OVERLAY NETWORK ---"
 echo "------------------------------"
 echo
 if [ "${MASTER}" == "true" ]; then
-  bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+  # TODO: CAAS-1660: test and clean!
+  #bash 2_install_kubeadm/4_deploy_overlay_network.sh || false
+  bash 2_install_kubeadm/4_deploy_overlay_networki_calico_dual_stack.sh || false
 else
   echo "The node is no master. Skipping this step."
 fi
@@ -104,6 +118,22 @@ echo
   && echo "Note the sudo commands and the sudo tee -a in the last command" \
   && echo "Perform the adapted commands in a separate window. Press any key, when you are done..." \
   && while true; do echo -n .; read -s -t 10 -a REPLY && break; done || true; echo
+
+sudo yum install -y cifs-utils
+cat /etc/fstab | grep u380503.your-storagebox.de \
+  || echo "//u380503.your-storagebox.de/backup /mnt/u380503.your-storagebox.de cifs iocharset=utf8,rw,credentials=/etc/Hetzner/u380503.your-storagebox.de.credentials,uid=0,gid=0,file_mode=0660,dir_mode=0770 0 0" \
+     | sudo tee -a "/etc/fstab"
+sudo systemctl daemon-reload
+sudo mkdir -p /mnt/u380503.your-storagebox.de
+sudo [ ! -r /etc/Hetzner/u380503.your-storagebox.de.credentials ] \
+  && [ -r ~/.credentials/Hetzner/u380503.your-storagebox.de.credentials ] \
+  && sudo mkdir -p /etc/Hetzner \
+  && sudo touch /etc/Hetzner/u380503.your-storagebox.de.credentials \
+  && sudo chmod 600 /etc/Hetzner/u380503.your-storagebox.de.credentials \
+  && cat ~/.credentials/Hetzner/u380503.your-storagebox.de.credentials | sudo tee /etc/Hetzner/u380503.your-storagebox.de.credentials
+
+sudo mount /mnt/u380503.your-storagebox.de
+
 
 echo "----------------------------------------------"
 echo "--- ADD KUBE PERSISTENT VOLUMES IF NEEDED  ---"
