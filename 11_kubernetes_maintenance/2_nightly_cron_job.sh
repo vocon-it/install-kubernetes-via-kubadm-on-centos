@@ -14,3 +14,5 @@ docker -v && docker system prune --all --force
 _PREFETCH_IMAGES=$(kubectl -n get-desktop get deploy -o yaml | egrep 'IMAGE$' -A 1 | grep value | awk '{print $2}')
 sudo bash 3_pre-pull-images.sh kasmweb/desktop-deluxe:1.11.0 vocon/intellij-desktop:latest vocon/deploy-intellij-desktop:latest vocon/idle-timeout:latest $_PREFETCH_IMAGES
 
+# remove core dump files:
+sudo find /mnt -iname 'core.*' 2>/dev/null | egrep 'core\.[0-9]+$' | while read FILE; do echo "${FILE}"; sudo rm "${FILE}"; done
