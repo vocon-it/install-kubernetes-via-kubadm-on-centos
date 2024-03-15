@@ -1,5 +1,4 @@
 # run as user...
-set -x
 if ! ls /mnt/u380503.your-storagebox.de > /dev/null 2> /dev/null; then
   echo "ERROR: /mnt/u380503.your-storagebox.de missing in mount list. Trying to re-mount..."
   mount /mnt/u380503.your-storagebox.de \
