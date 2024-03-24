@@ -1,7 +1,7 @@
 
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
 NUMBER_OF_VOLUMES=${NUMBER_OF_VOLUMES:=100}
-OFFSET=${OFFSET:=0}
+#OFFSET=${OFFSET:=0}
 
 toLowerFirstChar() {
   _a=${1,}; echo ${_a:0:1}
@@ -42,10 +42,12 @@ EOF
 export DISK=${DISK:=$(cat /etc/fstab | grep '/mnt/HC' | cut -d' ' -f2 | tail -1)}
 export VOLUME_NAME_PREFIX=$(echo $DISK | awk -F'/mnt/' '{print $2}' | sed -e 's/\(.*\)/\L\1/' | sed 's,_,-,g')
 export NODE=$(hostname)
+OFFSET=${OFFSET:=$(kubectl get pv | grep $VOLUME_NAME_PREFIX | wc -l)}
 
 echo DISK=$DISK
 echo VOLUME_NAME_PREFIX=$VOLUME_NAME_PREFIX
 echo NODE=$NODE
+echo OFFSET=$OFFSET
 
 read -p 'Execute? (y/n) ' answer
 isNotYes $answer && echo exiting... && exit
