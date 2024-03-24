@@ -42,7 +42,7 @@ ktop ()
     ( SORT=$1;
     SORT=${SORT:=memory};
     PATTERN=$2;
-    PATTERN=${PATTERN:=intellij-desktop};
+    PATTERN=${PATTERN:=intellij-desktop|idle-timeout};
     echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
     kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep --color=auto "^NAME|${PATTERN}" | while read LINE; do
         NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}');
@@ -81,8 +81,8 @@ $(df | grep -v docker | grep -v containerd)
 
 #$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' # enriched with NODE
-$(ktop memory intellij-desktop)
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=cpu | egrep '^NAME|intellij-desktop|idle-timeout' # enriched with NODE
+$(ktop cpu "intellij-desktop|idle-timeout")
 "
 
   OUT="$OUT
