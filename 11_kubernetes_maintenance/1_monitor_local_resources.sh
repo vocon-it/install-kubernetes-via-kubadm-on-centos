@@ -40,7 +40,8 @@ ktop ()
     # prints k top pod -A, enriched with node information
     # try: ktop memory intellij-desktop (default) or ktop cpu kube-system
     ( SORT=$1;
-    SORT=${SORT:=memory};
+    #SORT=${SORT:=memory};
+    SORT=${SORT:=cpu};
     PATTERN=$2;
     PATTERN=${PATTERN:=intellij-desktop|idle-timeout};
     echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
@@ -81,8 +82,8 @@ $(df | grep -v docker | grep -v containerd)
 
 #$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=cpu | egrep '^NAME|intellij-desktop|idle-timeout' # enriched with NODE
-$(ktop cpu "intellij-desktop|idle-timeout")
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=cpu | egrep '^NAME|intellij-desktop' # enriched with NODE
+$(ktop cpu intellij-desktop)
 "
 
   OUT="$OUT
