@@ -1,0 +1,1 @@
+kubectl -n idle-timeout get deploy | grep 1/1 | awk '{print $1}' | while read D; do kubectl -n idle-timeout logs deploy/$D | tail -20 | egrep ' PODS=$' && echo $D && kubectl -n idle-timeout scale deploy $D --replicas 0; done
