@@ -44,10 +44,11 @@ ktop ()
     SORT=${SORT:=cpu};
     PATTERN=$2;
     PATTERN=${PATTERN:=intellij-desktop|idle-timeout};
-    echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE";
+    echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE AGE";
     kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep --color=auto "^NAME|${PATTERN}" | while read LINE; do
         NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}');
-        echo "$LINE      $NODE";
+        AGE=$(kubectl -n $(echo $LINE | awk '{print $1}') get  pod $(echo $LINE | awk '{print $2}') | tail -1 | awk '{print $5}');
+        echo "$LINE      $NODE      $AGE";
     done ) | column -t
 }
 
@@ -82,7 +83,7 @@ $(df | grep -v docker | grep -v containerd)
 
 #$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
   OUT="$OUT
-kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=cpu | egrep '^NAME|intellij-desktop' # enriched with NODE
+kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=cpu | egrep '^NAME|intellij-desktop' # enriched with NODE and AGE
 $(ktop cpu intellij-desktop)
 "
 
