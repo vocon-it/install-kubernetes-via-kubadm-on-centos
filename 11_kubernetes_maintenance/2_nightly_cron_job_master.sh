@@ -41,7 +41,7 @@ fi
 # Detect Namespaces to be cleaned
 #
 
-NAMESPACES_TO_BE_CLEANED=$(kubectl get ingress -A | egrep ' intellij-desktop .*[1-9][0-9]+d$' | egrep -v ${EXCLUDE_PATTERN} | cut -d' ' -f 1)
+NAMESPACES_TO_BE_CLEANED=$(kubectl get ingress -A | egrep ' intellij-desktop .*[0-9]+d' | egrep -v ${EXCLUDE_PATTERN} | cut -d' ' -f 1)
 
 #
 # Delete obsolete ingresses:
