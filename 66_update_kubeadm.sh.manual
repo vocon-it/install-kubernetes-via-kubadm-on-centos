@@ -46,6 +46,7 @@ kubectl version --short
 #  Then rerun the whole script with the next higher MAJOR version
 TARGET_MAJOR_VERSION=1.24
 TARGET_MAJOR_VERSION=1.25
+TARGET_MAJOR_VERSION=1.26
 
 # Initialize and Show Upgrade Plan
 TARGET_VERSION=$(target_version)
@@ -54,7 +55,33 @@ echo $TARGET_VERSION
 # This step is not needed. There is no need to upgrade kubectl before we upgrade kubernetes:
 #   update_kubectl_via_curl
 
-sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+
+
+yum repolist
+
+sudo yum-config-manager --disable base
+sudo yum-config-manager --disable epel
+sudo yum-config-manager --disable updates
+sudo yum-config-manager --disable extras
+
+sudo yum clean all
+
+yum repolist
+
+yum list kubeadm --showduplicates --disableexcludes=kubernetes
+
+#sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo yum install -y kubeadm --disableexcludes=kubernetes
 sudo kubeadm upgrade plan
 
 # Sometimes it is needed to rerun target_version, kubeadm upgrade and kubeadm upgrade plan to get the latest version:
@@ -66,6 +93,33 @@ if [ "${TARGET_VERSION}" != "${TARGET_VERSION_OLD}" ]; then
   sudo kubeadm upgrade plan
 fi
 
+# upgrade containerd
+sudo systemctl stop containerd
+sudo yum remove containerd
+
+sudo yum update -y
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum install -y containerd.io
+
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+
+sudo cat /etc/containerd/config.toml | egrep 'io.containerd.grpc.v1.cri|registry.k8s.io/pause' | grep -B 1 'registry.k8s.io/pause'
+# here we should see:
+#  [plugins."io.containerd.grpc.v1.cri"]
+#    sandbox_image = "registry.k8s.io/pause:3.6"
+
+sudo systemctl enable containerd
+sudo systemctl start containerd
+
+sudo systemctl status containerd
+
+sudo crictl info
+
+sudo kubeadm config images pull
+
+
 # Drain
 kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force
 
@@ -75,7 +129,8 @@ sudo kubeadm upgrade apply ${TARGET_VERSION}
 # if asked, enter y + return and wait for the upgrade to complete
 
 # Upgrade kubelet and kubectl
-sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+#sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo yum install -y kubelet kubectl --disableexcludes=kubernetes
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
@@ -118,16 +173,83 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 # TARGET_VERSION=1.24.12
 #TARGET_VERSION=v1.24.17
 TARGET_VERSION=v1.25.14
+TARGET_VERSION=v1.26.15
 TARGET_VERSION=$(echo ${TARGET_VERSION} | sed 's/v//')
 echo $TARGET_VERSION
 
 # Drain
 kubectl drain $(hostname) --ignore-daemonsets --delete-emptydir-data --force || kubectl drain $(hostname) --ignore-daemonsets
 
-sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+
+
+yum repolist
+
+sudo yum-config-manager --disable base
+sudo yum-config-manager --disable epel
+sudo yum-config-manager --disable updates
+sudo yum-config-manager --disable extras
+
+sudo yum clean all
+
+yum repolist
+
+yum list kubeadm --showduplicates --disableexcludes=kubernetes
+
+#sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+#sudo yum install -y kubeadm --disableexcludes=kubernetes
+
+
+# upgrade containerd
+sudo systemctl stop containerd
+sudo yum remove containerd
+
+sudo yum update -y
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum install -y containerd.io
+
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+
+sudo cat /etc/containerd/config.toml | egrep 'io.containerd.grpc.v1.cri|registry.k8s.io/pause' | grep -B 1 'registry.k8s.io/pause'
+# here we should see:
+#  [plugins."io.containerd.grpc.v1.cri"]
+#    sandbox_image = "registry.k8s.io/pause:3.6"
+
+sudo systemctl enable containerd
+sudo systemctl start containerd
+
+sudo systemctl status containerd
+
+sudo crictl info
+
+# if we got the following error, we need to tell crictl to use the containerd.sock instead of the dockershim.sock:
+#
+# WARN[0000] runtime connect using default endpoints: [unix:///var/run/dockershim.sock unix:///run/containerd/containerd.sock unix:///run/crio/crio.sock unix:///var/run/cri-dockerd.sock]. As the default settings are now deprecated, you should set the endpoint instead.
+# E1208 08:35:54.891188   11117 remote_runtime.go:616] "Status from runtime service failed" err="rpc error: code = Unavailable desc = connection error: desc = \"transport: Error while dialing dial unix /var/run/dockershim.sock: connect: no such file or directory\""
+# FATA[0000] getting status of runtime: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial unix /var/run/dockershim.sock: connect: no such file or directory"
+
+
+echo 'runtime-endpoint: unix:///run/containerd/containerd.sock' | sudo tee /etc/crictl.yaml
+
+sudo crictl info
+
+#sudo yum install -y kubeadm-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo yum install -y kubeadm  --disableexcludes=kubernetes
 sudo kubeadm upgrade node
 
-sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+#sudo yum install -y kubelet-${TARGET_VERSION}-0 kubectl-${TARGET_VERSION}-0 --disableexcludes=kubernetes
+sudo yum install -y kubelet kubectl --disableexcludes=kubernetes
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
@@ -178,6 +300,57 @@ kubectl uncordon $(hostname)
 
 # Check
 kubectl get nodes
+
+
+# After Upgrading dicker, I got
+# ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+sudo yum remove -y docker-ce docker-ce-cli containerd.io
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+
+sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.bak-$(date +%Y-%m-%d--%H-%M)
+
+sudo vi /etc/docker/daemon.json
+# remove the following part:
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+
+# and remove the excess comma in the line before
+
+# then:
+sudo systemctl reset-failed docker.service
+sudo systemctl start docker
+
+# check, if kubelet is still working:
+sudo systemctl status kubelet
+sudo systemctl restart kubelet
+sudo systemctl status kubelet
+
+# If it does not work, check the config.toml
+sudo cat /etc/containerd/config.toml | egrep 'io.containerd.grpc.v1.cri|registry.k8s.io/pause' | grep -B 1 'registry.k8s.io/pause'
+
+# if there is no output, then re-create the config.toml and try again:
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+sudo cat /etc/containerd/config.toml | egrep 'io.containerd.grpc.v1.cri|registry.k8s.io/pause' | grep -B 1 'registry.k8s.io/pause'
+sudo systemctl status containerd
+sudo systemctl restart containerd
+sudo systemctl status containerd
+
+sudo systemctl start kubelet
+
+# if everything works:
+sudo systemctl enable containerd
+sudo systemctl enable docker
+sudo systemctl enable kubelet
+
+sudo reboot
+
+# and check the services again after reboot:
+
+sudo systemctl status containerd
+sudo systemctl status docker
+sudo systemctl status kubelet
 
 
 
