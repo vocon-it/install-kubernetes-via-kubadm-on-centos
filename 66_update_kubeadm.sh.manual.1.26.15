@@ -47,7 +47,6 @@ kubectl version --short
 TARGET_MAJOR_VERSION=1.24
 TARGET_MAJOR_VERSION=1.25
 TARGET_MAJOR_VERSION=1.26
-TARGET_MAJOR_VERSION=1.27
 
 # This step is not needed. There is no need to upgrade kubectl before we upgrade kubernetes:
 #   update_kubectl_via_curl
@@ -55,10 +54,10 @@ TARGET_MAJOR_VERSION=1.27
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.27/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.27/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
@@ -173,16 +172,12 @@ kubectl get nodes
 # Update config
 #  (if needed)
 mkdir -p $HOME/.kube
-cp -i $HOME/.kube/config $HOME/.kube/config.bak-$(date +%Y-%m-%d--%H-%M)
+sudo cp -i $HOME/.kube/config $HOME/.kube/config.bak-$(date +%Y-%m-%d)
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
-cp $HOME/.kube/config /mnt/u380503.your-storagebox.de/config
 
 # test new config file:
 kubectl get nodes
-
-# !!!! Here, I had a OOM out of memory on master1. A hard reboot via Hetzner has helped.
-sudo reboot
 
 ################
 ##   Agents   ##
@@ -193,17 +188,16 @@ sudo reboot
 #TARGET_VERSION=v1.24.17
 TARGET_VERSION=v1.25.14
 TARGET_VERSION=v1.26.15
-TARGET_VERSION=v1.27.16
 TARGET_VERSION=$(echo ${TARGET_VERSION} | sed 's/v//')
 echo $TARGET_VERSION
 
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.27/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.27/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.26/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
@@ -315,14 +309,9 @@ kubectl get nodes
 # Uncordon
 kubectl uncordon $(hostname)
 
-cp -i $HOME/.kube/config $HOME/.kube/config.bak-$(date +%Y-%m-%d--%H-%M)
-cp /mnt/u380503.your-storagebox.de/config $HOME/.kube/config 
-
-
 # Check
 kubectl get nodes
 
-#####################################################################
 
 # After Upgrading dicker, I got
 # ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
