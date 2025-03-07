@@ -12,21 +12,29 @@ crypto-delete-deployments() {
   # read pattern from storagebox. If not found, read the pattern from git:
   CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN="${CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN:=$(echo ${CLOUD_DESKTOP_ABUSE_PROCESS_CONFIG} | awk '{print $1}')}"
   kubectl top pod --all-namespaces --use-protocol-buffers --no-headers --sort-by=cpu \
-    | egrep ook \
+    | egrep '\-ook' \
     | while read NAMESPACE NAME CPU RAM;
       do
         CPU_MILLIS=$(echo $CPU | sed 's/m//');
-        if [ $CPU_MILLIS -gt 500 ]; then
+        # Perform the abuse detection, if CPU > 500m or if we find a file ".ABUSE_DETECTED*" that had be created by a prevous session
+        if [ $CPU_MILLIS -gt 0 ] \
+        || kubectl -n $NAMESPACE exec deploy/intellij-desktop -- ls '.ABUSE_DETECTED*' | grep .
+        then
           echo "CPU_MILLIS=$CPU_MILLIS";
           echo "$NAMESPACE: $CPU_MILLIS";
-          if kubectl -n $NAMESPACE exec deploy/intellij-desktop -- ps -aux --sort -%cpu | head -10 | egrep "${CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN}" \
-          || kubectl -n $NAMESPACE exec deploy/intellij-desktop -- cat .bash_history | egrep "${CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN}"
+          if kubectl -n $NAMESPACE exec deploy/intellij-desktop -- ps -aux --sort -%cpu | head -10 | egrep "${CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN}"
           then
             # monero: reduce configured CPU to 1%
             kubectl -n $NAMESPACE exec deploy/intellij-desktop -- bash -c 'find . -name config.json | while read CONFIG_JSON; do cat $CONFIG_JSON | grep max-threads-hint | sed -i '\''s/"max-threads-hint":.*/"max-threads-hint": 1,/g'\'' $CONFIG_JSON; done'
             # delete deployment
+            kubectl -n $NAMESPACE exec deploy/intellij-desktop -- bash -c 'touch "ABUSE_DETECTED__SHUTDOWN"; date +"%Y-%m-%dT%H:%M:%S%:z" >> .ABUSE_DETECTED_PROCESS__SHUTDOWN'
             kubectl -n $NAMESPACE delete deploy/intellij-desktop;
-          elif [  $CPU_MILLIS -gt 2500 ]; then
+          elif kubectl -n $NAMESPACE exec deploy/intellij-desktop -- cat .bash_history | egrep "${CLOUD_DESKTOP_ABUSE_PROCESS_PATTERN}"
+          then
+            kubectl -n $NAMESPACE exec deploy/intellij-desktop -- bash -c 'touch "ABUSE_DETECTED__SHUTDOWN"; date +"%Y-%m-%dT%H:%M:%S%:z" >> .ABUSE_DETECTED_BASH_HISTORY__SHUTDOWN'
+            kubectl -n $NAMESPACE delete deploy/intellij-desktop;
+          elif [  $CPU_MILLIS -gt 2500 ]
+          then
             kubectl -n $NAMESPACE delete deploy/intellij-desktop;
           fi
         else

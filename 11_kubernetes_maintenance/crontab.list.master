@@ -1,3 +1,10 @@
-0 2 * * * hwclock --hctosys
+0 2 * * * /usr/sbin/hwclock --hctosys
 0 4 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/2_nightly_cron_job_master.sh
+# temporarily clean the ingresses every 5 minutes:
+#*/5 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/2_nightly_cron_job_master.sh
 */2 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/7_cron_crypto_delete_master.sh
+# clean idle-timeout deployments:
+#*/5 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/11_clean_idle_timeout_deployments.sh
+*/5 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/12_clean_obsolete_jobs_and_deployments.sh
+#* * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/10_check_and_remount_cifs_storage.sh
+
