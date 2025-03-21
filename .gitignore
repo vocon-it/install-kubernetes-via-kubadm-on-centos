@@ -3,3 +3,6 @@
 *.tar.gz
 linux*
 .idea
+custom-resources.yaml
+tigera-operator.yaml
+

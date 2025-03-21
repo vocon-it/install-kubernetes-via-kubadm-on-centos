@@ -1,4 +1,34 @@
 
+# Official dockumentation: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+# --> Tab: Red Hat-based distributions
+# This file reflects the status of 20224-01-01 (v1.29.0)
+
+# Exit on Error
+set -e
+
+sudo yum list installed | grep kubeadm && echo "kubeadm is already installed. You need do remove kubeadm first." && false
+
+# Set SELinux in permissive mode (effectively disabling it)
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+# This overwrites any existing configuration in /etc/yum.repos.d/kubernetes.repo
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+sudo systemctl enable --now kubelet
+
+
+
+exit 0
 # Official documentation: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
 # --> Tab: CentOS, RHEL or Fedora
 # This file reflects the status of 2020-10-20 (v1.19.3)
