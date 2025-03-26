@@ -1,7 +1,11 @@
 0 2 * * * /usr/sbin/hwclock --hctosys
 0 3 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/2_nightly_cron_job.sh
 0 4 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/9_clean_my_cloudflare_cname_entries.sh
-*/15 * * * * /root/cron_pull_latest.sh kasmweb/desktop-deluxe:1.11.0 vocon/intellij-desktop:latest vocon/deploy-intellij-desktop:latest vocon/idle-timeout:latest kasmweb/ubuntu-bionic-desktop:1.10.0 kasmweb/centos-7-desktop:1.11.0 vocon/kasm-blender:1.13.0 vocon/intellij-desktop:feature-caas-1630-add-a-jupyter-notebook-container-39 vocon/deploy-intellij-desktop:feature-caas-1630-add-a-jupyter-notebook-container-39 vocon/idle-timeout:feature-caas-1630-add-a-jupyter-notebook-container-39 jupyter/r-notebook:latest vocon/jupyter-julia-notebook:2023-11-17 jupyter/scipy-notebook:latest jupyter/tensorflow-notebook:latest jupyter/datascience-notebook:latest vocon/intellij-desktop:feature-caas-1630-add-a-jupyter-notebook-container-45 vocon/deploy-intellij-desktop:feature-caas-1630-add-a-jupyter-notebook-container-45 vocon/idle-timeout:feature-caas-1630-add-a-jupyter-notebook-container-45
+0 5 * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/13_clean_nvm_node_version_binaries.sh
+# dev and prod:
+*/15 * * * * /root/cron_pull_latest.sh vocon/intellij-desktop:feature-caas-1868-vcpu-reduction-if-no-day-pass-31 vocon/desktop-deluxe:1.16.0 vocon/unityhub:1.14.0 vocon/kali-rolling-desktop:1.14.0 kasmweb/desktop-deluxe:1.11.0 kasmweb/desktop-deluxe:1.14.0 vocon/intellij-desktop:latest vocon/deploy-intellij-desktop:latest vocon/idle-timeout:latest kasmweb/ubuntu-bionic-desktop:1.10.0 kasmweb/centos-7-desktop:1.11.0 kasmweb/centos-7-desktop:1.14.0 kasmweb/kali-rolling-desktop:1.14.0 vocon/kasm-blender:1.13.0 vocon/kasm-blender:1.14.0 jupyter/r-notebook:latest vocon/jupyter-julia-notebook:2023-11-17 jupyter/scipy-notebook:latest jupyter/tensorflow-notebook:latest jupyter/datascience-notebook:latest 
+* * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/10_check_and_remount_cifs_storage.sh
+
 # is done on node1. Should we move that to master?
 */30 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/5_garbage_collection.sh
 */30 * * * * bash /home/centos/install-kubernetes-via-kubadm-on-centos/11_kubernetes_maintenance/8_cron_crypto_disable_nodes.sh
