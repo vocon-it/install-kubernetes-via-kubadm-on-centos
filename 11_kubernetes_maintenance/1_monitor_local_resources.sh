@@ -105,14 +105,14 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
-  curl -s -L cloud.${SUBDOMAIN}vocon-it.com | grep -q IntellijFrontend \
+  curl -s -L https://cloud.${SUBDOMAIN}vocon-it.com | grep -q IntellijFrontend \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 !!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.${SUBDOMAIN}vocon-it.com
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 "
 
-  curl -s -L get-desktop.${SUBDOMAIN}vocon-it.com | grep -q 401 \
+  curl -s -L https://get-desktop.${SUBDOMAIN}vocon-it.com | grep -q 401 \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop.${SUBDOMAIN}vocon-it.com
