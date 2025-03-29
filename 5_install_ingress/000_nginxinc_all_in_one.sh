@@ -13,8 +13,9 @@ usage() {
 [ "$1" == "-d" ] && CMD=delete || CMD=apply
 #NGINXINC_BRANCH=master
 #NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-1.9} # Note: '1.9' is a moving target and it refers to 1.9.1, currently (as of 2021-01-03)
-NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-2.0} # Note: '2.0' is a moving target and it refers to 2.0.3, currently (as of 2021-11-06)
-BASE_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${NGINXINC_BRANCH}/deployments"
+#NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-2.0} # Note: '2.0' is a moving target and it refers to 2.0.3, currently (as of 2021-11-06)
+NGINXINC_BRANCH=${NGINXINC_BRANCH:=release-4.0} # Note: '4.0' is a moving target and it refers to 4.0.1, currently (as of 2025-03-29)
+BASE_URL="https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/${NGINXINC_BRANCH}/"
 
 # choose the environment, where to deploy the NginX controller by choosing the KUBECONFIG file:
 DEPLOY_ON_ENVIRONMENT=${DEPLOY_ON_ENVIRONMENT:=local}
@@ -31,24 +32,49 @@ if [ "${NGINXINC_BRANCH}" == "release-1.9" ]; then
   APP_PROJECT="common/ap-logconf-definition.yaml common/ap-policy-definition.yaml"
   NGINX_INGRESS=daemon-set/nginx-ingress.yaml
   ALL="$NAMESPACE_AND_SERVICEACCOUNT $RBAC $COMMOM $CUSTOM_RESOURCES $APP_PROJECT $NGINX_INGRESS"
-else # see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests as of 2021-11-06
+elif [ "${NGINXINC_BRANCH}" == "release-2.0" ]; then # see https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests as of 2021-11-06
   ALL="
-      common/ns-and-sa.yaml
-      rbac/rbac.yaml
-      rbac/ap-rbac.yaml
-      common/default-server-secret.yaml
-      common/nginx-config.yaml
-      common/ingress-class.yaml
-      common/crds/k8s.nginx.org_virtualservers.yaml
-      common/crds/k8s.nginx.org_virtualserverroutes.yaml
-      common/crds/k8s.nginx.org_transportservers.yaml
-      common/crds/k8s.nginx.org_policies.yaml
-      common/crds/k8s.nginx.org_globalconfigurations.yaml
-      common/crds/appprotect.f5.com_aplogconfs.yaml
-      common/crds/appprotect.f5.com_appolicies.yaml
-      common/crds/appprotect.f5.com_apusersigs.yaml
-      daemon-set/nginx-ingress.yaml
+      deployments/common/ns-and-sa.yaml
+      deployments/rbac/rbac.yaml
+      deployments/rbac/ap-rbac.yaml
+      deployments/common/default-server-secret.yaml
+      deployments/common/nginx-config.yaml
+      deployments/common/ingress-class.yaml
+      deployments/common/crds/k8s.nginx.org_virtualservers.yaml
+      deployments/common/crds/k8s.nginx.org_virtualserverroutes.yaml
+      deployments/common/crds/k8s.nginx.org_transportservers.yaml
+      deployments/common/crds/k8s.nginx.org_policies.yaml
+      deployments/common/crds/k8s.nginx.org_globalconfigurations.yaml
+      deployments/common/crds/appprotect.f5.com_aplogconfs.yaml
+      deployments/common/crds/appprotect.f5.com_appolicies.yaml
+      deployments/common/crds/appprotect.f5.com_apusersigs.yaml
+      deployments/daemon-set/nginx-ingress.yaml
     "
+elif [ "${NGINXINC_BRANCH}" == "release-4.0" ]; then
+  ALL="
+      deployments/common/ns-and-sa.yaml
+      deployments/rbac/rbac.yaml
+      deployments/rbac/ap-rbac.yaml
+      deployments/common/nginx-config.yaml
+      deployments/common/ingress-class.yaml
+      config/crd/bases/k8s.nginx.org_virtualservers.yaml
+      config/crd/bases/k8s.nginx.org_virtualserverroutes.yaml
+      config/crd/bases/k8s.nginx.org_transportservers.yaml
+      config/crd/bases/k8s.nginx.org_policies.yaml
+      config/crd/bases/k8s.nginx.org_globalconfigurations.yaml
+      config/crd/bases/appprotect.f5.com_aplogconfs.yaml
+      config/crd/bases/appprotect.f5.com_appolicies.yaml
+      config/crd/bases/appprotect.f5.com_apusersigs.yaml
+      deployments/daemon-set/nginx-ingress.yaml
+    "
+      # removed from the list even though it is documented on https://docs.nginx.com/nginx-ingress-controller/installation/installing-nic/installation-with-manifests/:
+      #   examples/shared-examples/default-server-secret/default-server-secret.yaml
+      # but the examples/shared-examples/default-server-secret/default-server-secret.yaml does not exist. 
+      # sth. similar exists on 
+      #   examples/common-secrets/default-server-secret-NGINXIngressController.yaml
+      # but nginx-ingress seems to install without this secret:
+else
+  echo ERROR: unsupported/untested version && exit 1
 fi
 
 for YAML in $ALL
