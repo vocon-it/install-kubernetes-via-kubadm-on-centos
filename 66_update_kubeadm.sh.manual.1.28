@@ -186,6 +186,10 @@ kubectl get nodes
 # Even though there was no problem during the 1.28 Upgrade, I have done a reboot nevertheless:
 sudo reboot
 
+# after the reboot on the 1.28 upgrade, the performance of the master was very bad for 15 minutes or so and k top pod showed 95% memory consumption.
+# However, the problem was gone after some time and I did not upgrade cpu and memory yet. It is still 4 CPU and 8GB RAM. 
+# Next time, we should consider to perform an CPU/RAM upgrade during the kube upgrade.
+
 ################
 ##   Agents   ##
 ################
