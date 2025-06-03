@@ -78,7 +78,7 @@ $(kubectl describe nodes ${NODE} | grep -A 100 Allocated)
 "
 
   OUT="$OUT
-$(df | egrep -v '^tmpfs|^overlay|^shm')
+$(df | egrep -v '^devtmpfs|^tmpfs|^overlay|^shm')
 "
 
 #$(kubectl top pod --all-namespaces --use-protocol-buffers --sort-by=memory | egrep '^NAME|intellij-desktop' | head -8)
