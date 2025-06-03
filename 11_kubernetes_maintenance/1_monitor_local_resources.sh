@@ -105,7 +105,7 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
-  curl -s -L https://cloud.${SUBDOMAIN}vocon-it.com | grep -q IntellijFrontend \
+  curl -s -L https://cloud.${SUBDOMAIN}vocon-it.com | grep -q "intellij-frontend" \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 !!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.${SUBDOMAIN}vocon-it.com
