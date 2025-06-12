@@ -6,8 +6,21 @@ DIR="$(cd $(dirname $0); pwd)" && cd "${DIR}"
 # check, if sudo is supported:
 sudo echo supported > /dev/null 2>/dev/null || alias sudo=$@
 
+echo "Before cleaning:"
+sudo du -h -d1 /var/lib/containerd
+
+# remove exited containers:
+sudo crictl rmp -a
+
 # remove unused images:
 sudo crictl rmi --prune
+
+# clean snapshots (will create "ctr: failed to remove" errors, but this is Okay)
+sudo ctr snapshots list | awk 'NR>1 {print $1}' | while read snap; do
+  sudo ctr snapshot rm "$snap"
+done
+
+# clean docker:
 docker -v && docker system prune --all --force
 
 # pre-fetch container images (latest images and all images used in get-desktop): 
@@ -16,3 +29,7 @@ sudo bash 3_pre-pull-images.sh kasmweb/desktop-deluxe:1.11.0 vocon/intellij-desk
 
 # remove core dump files:
 sudo find /mnt -iname 'core.*' 2>/dev/null | egrep 'core\.[0-9]+$' | while read FILE; do echo "${FILE}"; sudo rm "${FILE}"; done
+
+echo "After cleaning:"
+sudo du -h -d1 /var/lib/containerd
+

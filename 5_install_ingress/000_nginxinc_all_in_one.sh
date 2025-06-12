@@ -66,6 +66,7 @@ elif [ "${NGINXINC_BRANCH}" == "release-4.0" ]; then
       config/crd/bases/appprotect.f5.com_appolicies.yaml
       config/crd/bases/appprotect.f5.com_apusersigs.yaml
       deployments/daemon-set/nginx-ingress.yaml
+      deployments/service/nodeport.yaml
     "
       # removed from the list even though it is documented on https://docs.nginx.com/nginx-ingress-controller/installation/installing-nic/installation-with-manifests/:
       #   examples/shared-examples/default-server-secret/default-server-secret.yaml
@@ -73,6 +74,8 @@ elif [ "${NGINXINC_BRANCH}" == "release-4.0" ]; then
       # sth. similar exists on 
       #   examples/common-secrets/default-server-secret-NGINXIngressController.yaml
       # but nginx-ingress seems to install without this secret:
+      #
+      # removed "deployments/service/nodeport.yaml" since it is not needed.
 else
   echo ERROR: unsupported/untested version && exit 1
 fi
