@@ -1,9 +1,13 @@
+export CM_VERSION=v1.18.2
+
 certManagerUpAndRunning() {
   kubectl get pods --namespace cert-manager | awk '{print $2}' | grep -c 1/1 | grep 3
 }
 
+
 if ! certManagerUpAndRunning; then
-  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.8.0/cert-manager.yaml
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${CM_VERSION}/cert-manager.crds.yaml
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${CM_VERSION}/cert-manager.yaml
 else
   exit 0
 fi
