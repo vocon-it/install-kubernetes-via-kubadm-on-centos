@@ -9,8 +9,8 @@ LATEST_IMAGES="$(echo $@ | tr ' ' '\n')"
 # add latest images found via 'docker images':
 #docker login
 LATEST_IMAGES="${LATEST_IMAGES}
-$(docker images | grep latest | awk '{print $1}')
-$(sudo ctr -n k8s.io images ls | grep develop | awk '{print $1}' | sed 's_docker.io/__')
+$(docker images 2>/dev/null | grep latest | awk '{print $1}')
+$(sudo ctr -n k8s.io images ls 2>/dev/null | grep develop | awk '{print $1}' | sed 's_docker.io/__')
 "
 
 # remove duplicates:
