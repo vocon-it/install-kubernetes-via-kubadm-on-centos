@@ -2,10 +2,13 @@
 
 DRIVES_TO_BE_CLEANED="/mnt/u380503.your-storagebox.de/user-specific-shared-volumes"
 CLEANUP_DRY_RUN=${CLEANUP_DRY_RUN:="true"}
+TMP_DIR=/mnt/u380503.your-storagebox.de/tmp
+
+mkdir -p "${TMP_DIR}"
 
 echo Cleaning caches
 # [ "${IDLE_CLEANUP_DRY_RUN}" != "false" ] && CLEANUP_DRY_RUN=true || CLEANUP_DRY_RUN=false
-CLEANUP_DU_LOG=/tmp/idle_cleanup_du_$(date +%Y%m%d_%H%M%S).log
+CLEANUP_DU_LOG="${TMP_DIR}/idle_cleanup_du_$(date +%Y%m%d_%H%M%S).log"
 export CLEANUP_DRY_RUN CLEANUP_DU_LOG
 echo "Cleanup du log: ${CLEANUP_DU_LOG}; dry-run=${CLEANUP_DRY_RUN}"
 for DRIVE in ${DRIVES_TO_BE_CLEANED}
