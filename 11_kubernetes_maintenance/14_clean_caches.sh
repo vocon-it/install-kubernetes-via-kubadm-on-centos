@@ -136,3 +136,19 @@ do
   echo "CLEANUP_DRY_RUN=${CLEANUP_DRY_RUN}"
   echo "CLEANUP_DU_LOG=${CLEANUP_DU_LOG}"
 done
+
+if [ -f "${CLEANUP_DU_LOG}" ] && [ -s "${CLEANUP_DU_LOG}" ]; then
+  TOTAL_KB=$(awk '{sum+=$1} END {print sum}' "${CLEANUP_DU_LOG}")
+  if [ -n "${TOTAL_KB}" ] && [ "${TOTAL_KB}" -gt 0 ] 2>/dev/null; then
+    TOTAL_GB=$((TOTAL_KB / 1024 / 1024))
+    if [ "${CLEANUP_DRY_RUN}" = "false" ]; then
+      echo "Cleanup summary: freed approximately ${TOTAL_GB} MiB (${TOTAL_KB} KiB) of disk space. Details in ${CLEANUP_DU_LOG}."
+    else
+      echo "Cleanup summary (dry run): would free approximately ${TOTAL_GB} MiB (${TOTAL_KB} KiB) of disk space. Details in ${CLEANUP_DU_LOG}."
+    fi
+  else
+    echo "Cleanup summary: no size information could be calculated from ${CLEANUP_DU_LOG}."
+  fi
+else
+  echo "Cleanup summary: no cleanup size information recorded; ${CLEANUP_DU_LOG} does not exist or is empty."
+fi
