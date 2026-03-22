@@ -119,6 +119,13 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
 
+  sudo kubectl get nodes \
+  || OUT="$OUT
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!! FATAL ERROR: root kubectl does not work! Need to update /root/.kube/config?
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"
+
   OUT="$OUT
 Letsencrypt (https) expire dates on ${ENVIRONMENT}:
 $(curl https://cloud.${SUBDOMAIN}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
