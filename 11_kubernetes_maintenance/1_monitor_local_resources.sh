@@ -58,11 +58,11 @@ while true; do
   OUT="watch: $0
 ### ENVIRONMENT=${ENVIRONMENT} ###
 "
-
-  UNAUTHORIZED_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep error=Unauthorized | wc -l)
-  COMPLETED_OK=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep url | wc -l)
-  NOT_FOUND_RESPONSES=$(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep '404 NOT_FOUND' | wc -l)
-  TOTAL_RESPONSES=$(( $(kubectl -n get-desktop logs $(kubectl -n get-desktop get pod | tail -1 | cut -d' ' -f1) | grep Writing | grep -v memory | wc -l) + $NOT_FOUND_RESPONSES ))
+  LOGS="$(kubectl -n get-desktop get pod -o json | jq -r .items[].metadata.name | xargs -l kubectl -n get-desktop logs)"
+  UNAUTHORIZED_RESPONSES=$(echo "${LOGS}" | grep Writing | grep error=Unauthorized | wc -l)
+  COMPLETED_OK=$(echo "${LOGS}" | grep Writing | grep url | wc -l)
+  NOT_FOUND_RESPONSES=$(echo "${LOGS}" | grep '404 NOT_FOUND' | wc -l)
+  TOTAL_RESPONSES=$(( $(echo "${LOGS}" | grep Writing | grep -v memory | wc -l) + $NOT_FOUND_RESPONSES ))
 
   OUT="$OUT
 Free Mem of node: $(free -h | egrep '^Mem:' | awk '{print $7}')
