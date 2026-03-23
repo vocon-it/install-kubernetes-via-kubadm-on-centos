@@ -151,8 +151,8 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 
   OUT="$OUT
 Letsencrypt (https) expire dates on ${MONITORING_ENVIRONMENT}:
-$(curl https://cloud${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
-$(curl https://get-desktop${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
+$(curl https://cloud${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep "expire date:" | sed 's/expire date:/intellij-frontend expire date:/')
+$(curl https://get-desktop${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep "expire date:" | sed 's/expire date:/get-desktop expire date:/')
 "
 
   # "Errored" PODs, if present (newest first):
