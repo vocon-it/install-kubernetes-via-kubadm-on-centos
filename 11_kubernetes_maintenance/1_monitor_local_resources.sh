@@ -2,9 +2,9 @@
 
 NODE=$(hostname)
 ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*singapore' && echo dev-singapore)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^singapore' && echo prod-singapore)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q 'singapore' && echo prod-singapore)"}
 ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*helsinki' && echo dev-helsinki)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^helsinki' && echo prod-helsinki)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q 'helsinki' && echo prod-helsinki)"}
 ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-' && echo dev-nbg)"}
 ENVIRONMENT=${ENVIRONMENT:="prod-nbg"}
 FQDN_SNIPPET=$(
