@@ -20,7 +20,7 @@ echo -n "INFO: removing old jobs that were not completed (i.e. errored and pendi
 kubectl -n deploy-intellij-desktop get job | grep 0/1 | egrep '[0-9]{2,2}m$' | cut -d ' ' -f 1 | while read JOB; do kubectl -n deploy-intellij-desktop delete job/$JOB; done
 echo "done"
 
-echo-n "INFO: scaling down old Pending intellij-desktops..."
+echo -n "INFO: scaling down old Pending intellij-desktops..."
 kubectl get deploy -A | grep 0/1 | grep intellij-desktop | egrep '[0-9]{2,2}m$' | while read NAMESPACE DEPLOY REST; do kubectl -n $NAMESPACE scale deploy/$DEPLOY --replicas=0; done
 echo "done"
 
