@@ -12,7 +12,7 @@ print_number_of_pods_on_all_hosts() {
 
 echo "--------------------------------"
 echo "Before cleaning: Number of PODS on all hosts:"
-echo "---"
+echo
      print_number_of_pods_on_all_hosts
 echo "--------------------------------"
 
@@ -31,7 +31,7 @@ echo "done"
 
 echo "--------------------------------"
 echo "After cleaning: Number of PODS on all hosts:"
-echo "---"
+echo
      print_number_of_pods_on_all_hosts
 echo "--------------------------------"
 
