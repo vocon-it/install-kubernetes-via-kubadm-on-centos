@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
 NODE=$(hostname)
-ENVIRONMENT=$(echo "$NODE" | egrep -q '^dev-' && echo dev || echo prod)
-SUBDOMAIN=$(
-  [ "$ENVIRONMENT" == "prod" ] && echo ""
-  [ "$ENVIRONMENT" == "dev" ] && echo "dev."
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*singapore' && echo dev-singapore)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^singapore' && echo prod-singapore)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*helsinki' && echo dev-helsinki)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^helsinki' && echo prod-helsinki)"}
+ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-' && echo dev-nbg)"}
+ENVIRONMENT=${ENVIRONMENT:="prod-nbg"}
+FQDN_SNIPPET=$(
+  [ "$ENVIRONMENT" == "dev-singapore" ] && echo "-singapore.dev."
+  [ "$ENVIRONMENT" == "prod-singapore" ] && echo "-singapore."
+  [ "$ENVIRONMENT" == "dev-helsinki" ] && echo "-helsinki.dev."
+  [ "$ENVIRONMENT" == "prod-helsinki" ] && echo "-helsinki."
+  [ "$ENVIRONMENT" == "dev-nbg" ] && echo ".dev."
+  [ "$ENVIRONMENT" == "prod-nbg" ] && echo "."
 )
 
 find-available-volumes-of-the-current-host() {
@@ -105,17 +114,17 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
-  curl -s -L https://cloud.${SUBDOMAIN}vocon-it.com | grep -q "vocon cloud" \
+  curl -s -L https://cloud${FQDN_SNIPPET}vocon-it.com | grep -q "vocon cloud" \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-!!!!!!!!!!!!! FATAL ERROR: cannot reach cloud.${SUBDOMAIN}vocon-it.com
+!!!!!!!!!!!!! FATAL ERROR: cannot reach cloud${FQDN_SNIPPET}vocon-it.com
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 "
 
-  curl -s -L https://get-desktop.${SUBDOMAIN}vocon-it.com | grep -q 401 \
+  curl -s -L https://get-desktop.${FQDN_SNIPPET}vocon-it.com | grep -q 401 \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop.${SUBDOMAIN}vocon-it.com
+!!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop${FQDN_SNIPPET}vocon-it.com
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
 
@@ -128,8 +137,8 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 
   OUT="$OUT
 Letsencrypt (https) expire dates on ${ENVIRONMENT}:
-$(curl https://cloud.${SUBDOMAIN}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
-$(curl https://get-desktop.${SUBDOMAIN}vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
+$(curl https://cloud${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
+$(curl https://get-desktop${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
 
   # "Errored" PODs, if present (newest first):
