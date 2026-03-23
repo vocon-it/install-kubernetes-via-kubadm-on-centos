@@ -80,8 +80,10 @@ ktop ()
 
 
 while true; do
-  OUT="watch: $0
-### MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT} ###
+  OUT="#############################################################################
+### watch: $0
+### MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT}
+#############################################################################
 "
   LOGS="$(kubectl -n get-desktop get pod -o json 2>/dev/null | jq -r .items[].metadata.name | xargs -l kubectl -n get-desktop logs 2>/dev/null)"
   UNAUTHORIZED_RESPONSES=$(echo "${LOGS}" | grep Writing | grep error=Unauthorized | wc -l)
