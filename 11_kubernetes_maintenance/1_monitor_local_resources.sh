@@ -68,7 +68,7 @@ ktop ()
     PATTERN=$2;
     PATTERN=${PATTERN:=intellij-desktop|idle-timeout};
     echo "$(kubectl top pod --all-namespaces --use-protocol-buffers | head -1) NODE AGE";
-    kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT | egrep --color=auto "^NAME|${PATTERN}" | while read LINE; do
+    kubectl top pod --no-headers --all-namespaces --use-protocol-buffers --sort-by=$SORT 2>/dev/null | egrep --color=auto "^NAME|${PATTERN}" | while read LINE; do
         NODE=$(kubectl -n $(echo $LINE | awk '{print $1}') get pod $(echo $LINE | awk '{print $2}') -o=jsonpath='{.spec.nodeName}');
         AGE=$(kubectl -n $(echo $LINE | awk '{print $1}') get  pod $(echo $LINE | awk '{print $2}') | tail -1 | awk '{print $5}');
         echo "$LINE      $NODE      $AGE";
