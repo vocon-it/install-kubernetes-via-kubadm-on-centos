@@ -1,5 +1,6 @@
 #
-# Scales down all idle-timeout deployments, if no user deployment with replicas > 0 is found
+# Scales down all idle-timeout deployments if no corresponding user deployment with replicas > 0 is found
+# Scales up all idle-timeout deployments if a corresponding user deployment with replicas > 0 exists
 #
 
 notEmpty() {
