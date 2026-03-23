@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export TERM="${TERM:-xterm-256color}" # get rid of the warning: "TERM environment variable not set."
+
 NODE=$(hostname)
 unset MONITORING_ENVIRONMENT FQDN_SNIPPET
 MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*singapore' && echo dev-singapore)"}
