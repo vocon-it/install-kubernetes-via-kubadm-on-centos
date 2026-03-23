@@ -1,24 +1,38 @@
 #!/usr/bin/env bash
 
 NODE=$(hostname)
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*singapore' && echo dev-singapore)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q 'singapore' && echo prod-singapore)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*helsinki' && echo dev-helsinki)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q 'helsinki' && echo prod-helsinki)"}
-ENVIRONMENT=${ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-' && echo dev-nbg)"}
-ENVIRONMENT=${ENVIRONMENT:="prod-nbg"}
+unset MONITORING_ENVIRONMENT FQDN_SNIPPET
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*singapore' && echo dev-singapore)"}
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q 'singapore' && echo prod-singapore)"}
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-.*helsinki' && echo dev-helsinki)"}
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q 'helsinki' && echo prod-helsinki)"}
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="$(echo "$NODE" | egrep -q '^dev-' && echo dev-nbg)"}
+MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT:="prod-nbg"}
 FQDN_SNIPPET=$(
-  [ "$ENVIRONMENT" == "dev-singapore" ] && echo "-singapore.dev."
-  [ "$ENVIRONMENT" == "prod-singapore" ] && echo "-singapore."
-  [ "$ENVIRONMENT" == "dev-helsinki" ] && echo "-helsinki.dev."
-  [ "$ENVIRONMENT" == "prod-helsinki" ] && echo "-helsinki."
-  [ "$ENVIRONMENT" == "dev-nbg" ] && echo ".dev."
-  [ "$ENVIRONMENT" == "prod-nbg" ] && echo "."
+  [ "$MONITORING_ENVIRONMENT" == "dev-singapore" ] && echo "-singapore.dev."
+  [ "$MONITORING_ENVIRONMENT" == "prod-singapore" ] && echo "-singapore."
+  [ "$MONITORING_ENVIRONMENT" == "dev-helsinki" ] && echo "-helsinki.dev."
+  [ "$MONITORING_ENVIRONMENT" == "prod-helsinki" ] && echo "-helsinki."
+  [ "$MONITORING_ENVIRONMENT" == "dev-nbg" ] && echo ".dev."
+  [ "$MONITORING_ENVIRONMENT" == "prod-nbg" ] && echo "."
 )
+
+echo "MONITORING_ENVIRONMENT=$MONITORING_ENVIRONMENT"
+echo "FQDN_SNIPPET=$FQDN_SNIPPET"
+if [ "$MONITORING_ENVIRONMENT" == "" ]; then
+  echo "ERROR: MONITORING_ENVIRONMENT is not set!"
+  exit 1
+fi
+if [ "$FQDN_SNIPPET" == "" ]; then
+  echo "ERROR: FQDN_SNIPPET is not set!"
+  exit 1
+fi
+
+sleep 2
 
 find-available-volumes-of-the-current-host() {
   get-persistent-volumes() {
-    kubectl get pv -o=json
+    kubectl get pv -o=json 2>/dev/null
   }
 
   items() {
@@ -65,7 +79,7 @@ ktop ()
 
 while true; do
   OUT="watch: $0
-### ENVIRONMENT=${ENVIRONMENT} ###
+### MONITORING_ENVIRONMENT=${MONITORING_ENVIRONMENT} ###
 "
   LOGS="$(kubectl -n get-desktop get pod -o json | jq -r .items[].metadata.name | xargs -l kubectl -n get-desktop logs)"
   UNAUTHORIZED_RESPONSES=$(echo "${LOGS}" | grep Writing | grep error=Unauthorized | wc -l)
@@ -114,14 +128,14 @@ Number of available Volumes: $(kubectl get pv | grep Avail | wc -l)
 Number of available Volumes on the current host: $(find-available-volumes-of-the-current-host | wc -l)
 "
 
-  curl -s -L https://cloud${FQDN_SNIPPET}vocon-it.com | grep -q "vocon cloud" \
+  curl -m 10 -s -L https://cloud${FQDN_SNIPPET}vocon-it.com | grep -q "vocon cloud" \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 !!!!!!!!!!!!! FATAL ERROR: cannot reach cloud${FQDN_SNIPPET}vocon-it.com
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 "
 
-  curl -s -L https://get-desktop.${FQDN_SNIPPET}vocon-it.com | grep -q 401 \
+  curl -m 10 -s -L https://get-desktop${FQDN_SNIPPET}vocon-it.com | grep -q 401 \
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!! FATAL ERROR: cannot reach get-desktop${FQDN_SNIPPET}vocon-it.com
@@ -136,7 +150,7 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 "
 
   OUT="$OUT
-Letsencrypt (https) expire dates on ${ENVIRONMENT}:
+Letsencrypt (https) expire dates on ${MONITORING_ENVIRONMENT}:
 $(curl https://cloud${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | sed 's/expire/intellij-frontend expire/')
 $(curl https://get-desktop${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep expire | grep expire | sed 's/expire/get-desktop expire/')
 "
