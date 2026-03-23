@@ -168,11 +168,21 @@ $([ "$(kubectl get pod -A 2>/dev/null | egrep -v ${EXCLUDE_PATTERN} | wc -l)" -g
   OUT="$OUT
 $([ "$(kubectl get pods -A -o wide 2>/dev/null | grep $(hostname) | grep Running | wc -l)" -ge ${WARNING_THRESHOLD} ] && echo "Warning: high number of PODs on the current host $(hostname): $(kubectl get pods -A -o wide 2>/dev/null | grep $(hostname) | grep Running | wc -l)/110 !!!!!!!!!!!!!!!!!!!!!!!!")
 "
- 
+  DOTS=${DOTS}.
+  [ "$DOTS" == "..........." ] && DOTS=""
+
+  OUT="$OUT
+$([ "$(kubectl get pods -A -o wide 2>/dev/null | grep $(hostname) | grep Running | wc -l)" -ge ${WARNING_THRESHOLD} ] && echo "Warning: high number of PODs on the current host $(hostname): $(kubectl get pods -A -o wide 2>/dev/null | grep $(hostname) | grep Running | wc -l)/110 !!!!!!!!!!!!!!!!!!!!!!!!")
+"
+  # remove colors and trailing empty lines:
+  OUT="$(echo "$OUT" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')"
+
+  OUT="$OUT
+${DOTS}"
 
   clear
   # with removal of colors and with removal of trailing empty lines:
-  echo "$OUT" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+  echo "$OUT" # | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
   sleep 2
 done
 
