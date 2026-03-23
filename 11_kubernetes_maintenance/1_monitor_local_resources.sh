@@ -119,7 +119,7 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
 
-  sudo kubectl get nodes \
+  sudo kubectl get nodes >/dev/null 2>/dev/null\
   || OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!! FATAL ERROR: root kubectl does not work! Need to update /root/.kube/config?
