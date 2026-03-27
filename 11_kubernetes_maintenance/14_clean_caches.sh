@@ -2,15 +2,15 @@ DRIVES_TO_BE_CLEANED="/mnt/u380503.your-storagebox.de/user-specific-shared-volum
 CLEANUP_DRY_RUN=${CLEANUP_DRY_RUN:="true"}
 UPDATE_CLEANUP_DU_LOG_LATEST=${UPDATE_CLEANUP_DU_LOG_LATEST:="true"}
 TMP_DIR=/mnt/u380503.your-storagebox.de/tmp
-CLEANUP_DU_LOG_LATEST="${TMP_DIR}/idle_cleanup_du_latest.log"
-TO_BE_CLEANED="${TMP_DIR}/idle_cleanup_to_be_cleaned.log"
+CLEANUP_DU_LOG_LATEST="${TMP_DIR}/network_drive_cleanup_du_latest.log"
+TO_BE_CLEANED="${TMP_DIR}/network_drive_cleanup_to_be_cleaned.log"
 
 mkdir -p "${TMP_DIR}"
 
 run_cleanup_scan() {
   local cleanup_dry_run_local="${CLEANUP_DRY_RUN}"
   local update_cleanup_du_log_latest_local="${UPDATE_CLEANUP_DU_LOG_LATEST}"
-  local cleanup_du_log_local="${TMP_DIR}/idle_cleanup_du_$(date +%Y%m%d_%H%M%S).log"
+  local cleanup_du_log_local="${TMP_DIR}/network_drive_cleanup_du_$(date +%Y%m%d_%H%M%S).log"
 
   export CLEANUP_DRY_RUN="${cleanup_dry_run_local}"
   export CLEANUP_DU_LOG="${cleanup_du_log_local}"
