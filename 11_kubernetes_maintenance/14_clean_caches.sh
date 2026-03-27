@@ -4,6 +4,7 @@ UPDATE_CLEANUP_DU_LOG_LATEST=${UPDATE_CLEANUP_DU_LOG_LATEST:="true"}
 TMP_DIR=/mnt/u380503.your-storagebox.de/tmp
 CLEANUP_DU_LOG_LATEST="${TMP_DIR}/network_drive_cleanup_du_latest.log"
 TO_BE_CLEANED="${TMP_DIR}/network_drive_cleanup_to_be_cleaned.log"
+ENABLE_CLEANUP_DRIVE_GUARD=${ENABLE_CLEANUP_DRIVE_GUARD:="true"}
 
 mkdir -p "${TMP_DIR}"
 
@@ -190,12 +191,113 @@ calculate_cleanup_size_from_log() {
   fi
 }
 
-# Planned step 2 extension: consume filtered log to actually remove entries.
+parse_cleanup_log_line() {
+  local cleanup_log_line="${1}"
+
+  PARSED_SIZE_KB=""
+  PARSED_PATH=""
+
+  [ -z "${cleanup_log_line}" ] && return 1
+
+  PARSED_SIZE_KB="${cleanup_log_line%%[[:space:]]*}"
+  PARSED_PATH="${cleanup_log_line#${PARSED_SIZE_KB}}"
+  PARSED_PATH="${PARSED_PATH#"${PARSED_PATH%%[![:space:]]*}"}"
+
+  case "${PARSED_SIZE_KB}" in
+    ''|*[!0-9]*)
+      return 1
+      ;;
+  esac
+
+  [ -z "${PARSED_PATH}" ] && return 1
+  return 0
+}
+
+path_is_within_cleaned_drives() {
+  local candidate_path="${1}"
+  local drive=""
+
+  for drive in ${DRIVES_TO_BE_CLEANED}; do
+    case "${candidate_path}" in
+      "${drive}"|"${drive}"/*)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
 apply_cleanup_from_log() {
   local cleanup_log_file="${CLEANUP_LOG_FILE}"
   local cleanup_dry_run_local="${CLEANUP_DRY_RUN}"
+  local processed_entries=0
+  local deleted_entries=0
+  local missing_entries=0
+  local failed_entries=0
+  local malformed_entries=0
+  local skipped_guard_entries=0
+  local candidate_kb=0
+  local deleted_kb=0
+  local line=""
+
+  if [ ! -f "${cleanup_log_file}" ] || [ ! -s "${cleanup_log_file}" ]; then
+    echo "Cleanup apply: log file missing or empty: ${cleanup_log_file}"
+    return 1
+  fi
+
+  while IFS= read -r line || [ -n "${line}" ]; do
+    [ -z "${line}" ] && continue
+
+    if ! parse_cleanup_log_line "${line}"; then
+      malformed_entries=$((malformed_entries + 1))
+      echo "Cleanup apply: skipping malformed log line: ${line}"
+      continue
+    fi
+
+    processed_entries=$((processed_entries + 1))
+    candidate_kb=$((candidate_kb + PARSED_SIZE_KB))
+
+    if [ "${ENABLE_CLEANUP_DRIVE_GUARD}" = "true" ] && ! path_is_within_cleaned_drives "${PARSED_PATH}"; then
+      skipped_guard_entries=$((skipped_guard_entries + 1))
+      echo "Cleanup apply: skipped by drive guard: ${PARSED_PATH}"
+      continue
+    fi
+
+    if [ ! -e "${PARSED_PATH}" ]; then
+      missing_entries=$((missing_entries + 1))
+      echo "Cleanup apply: already missing: ${PARSED_PATH}"
+      continue
+    fi
+
+    if [ "${cleanup_dry_run_local}" = "true" ]; then
+      echo "Cleanup apply (dry run): would remove ${PARSED_PATH} (${PARSED_SIZE_KB} KiB)"
+      continue
+    fi
+
+    if [ -d "${PARSED_PATH}" ]; then
+      if rm -rf -- "${PARSED_PATH}"; then
+        deleted_entries=$((deleted_entries + 1))
+        deleted_kb=$((deleted_kb + PARSED_SIZE_KB))
+      else
+        failed_entries=$((failed_entries + 1))
+        echo "Cleanup apply: failed to remove directory: ${PARSED_PATH}"
+      fi
+    else
+      if rm -f -- "${PARSED_PATH}"; then
+        deleted_entries=$((deleted_entries + 1))
+        deleted_kb=$((deleted_kb + PARSED_SIZE_KB))
+      else
+        failed_entries=$((failed_entries + 1))
+        echo "Cleanup apply: failed to remove file: ${PARSED_PATH}"
+      fi
+    fi
+  done < "${cleanup_log_file}"
+
+  echo "Cleanup apply summary: processed=${processed_entries}, deleted=${deleted_entries}, missing=${missing_entries}, failed=${failed_entries}, malformed=${malformed_entries}, guard_skipped=${skipped_guard_entries}"
   if [ "${cleanup_dry_run_local}" = "false" ]; then
-    echo "TODO step 2: implement path parsing/removal using ${cleanup_log_file}"
+    echo "Cleanup apply summary: actually removed approximately $((deleted_kb / 1024)) MiB (${deleted_kb} KiB)."
+  else
+    echo "Cleanup apply summary (dry run): candidates approximately $((candidate_kb / 1024)) MiB (${candidate_kb} KiB)."
   fi
 }
 
@@ -227,5 +329,9 @@ EXCLUDED_USER_ID_PATTERN="${EXCLUDED_USER_ID_PATTERN}" \
   build_to_be_cleaned_log || exit 1
 
 CLEANUP_LOG_FILE="${TO_BE_CLEANED}" \
-CLEANUP_DRY_RUN="true" \
+CLEANUP_DRY_RUN="${CLEANUP_DRY_RUN}" \
+  apply_cleanup_from_log
+
+CLEANUP_LOG_FILE="${TO_BE_CLEANED}" \
+CLEANUP_DRY_RUN="${CLEANUP_DRY_RUN}" \
   calculate_cleanup_size_from_log
