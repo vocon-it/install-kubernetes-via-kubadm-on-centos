@@ -155,18 +155,43 @@ build_to_be_cleaned_log() {
   local source_log_file="${SOURCE_LOG_FILE}"
   local output_log_file="${OUTPUT_LOG_FILE}"
   local excluded_user_id_pattern_local="${EXCLUDED_USER_ID_PATTERN}"
+  local line=""
+  local total_input_lines=0
+  local excluded_lines=0
+  local malformed_lines=0
+  local missing_path_lines=0
+  local kept_lines=0
 
   if [ ! -f "${source_log_file}" ]; then
     echo "Missing source log: ${source_log_file}"
     return 1
   fi
 
-  if [ -n "${excluded_user_id_pattern_local}" ]; then
-    grep -Ev "${excluded_user_id_pattern_local}" "${source_log_file}" > "${output_log_file}"
-  else
-    cp "${source_log_file}" "${output_log_file}"
-  fi
+  : > "${output_log_file}"
+
+  while IFS= read -r line || [ -n "${line}" ]; do
+    total_input_lines=$((total_input_lines + 1))
+
+    if [ -n "${excluded_user_id_pattern_local}" ] && printf '%s\n' "${line}" | grep -Eq "${excluded_user_id_pattern_local}"; then
+      excluded_lines=$((excluded_lines + 1))
+      continue
+    fi
+
+    if ! parse_cleanup_log_line "${line}"; then
+      malformed_lines=$((malformed_lines + 1))
+      continue
+    fi
+
+    if [ -e "${PARSED_PATH}" ]; then
+      printf '%s\n' "${line}" >> "${output_log_file}"
+      kept_lines=$((kept_lines + 1))
+    else
+      missing_path_lines=$((missing_path_lines + 1))
+    fi
+  done < "${source_log_file}"
+
   echo "Created filtered cleanup file: ${output_log_file}"
+  echo "TO_BE_CLEANED filter summary: total=${total_input_lines}, excluded=${excluded_lines}, malformed=${malformed_lines}, missing=${missing_path_lines}, kept=${kept_lines}"
 }
 
 calculate_cleanup_size_from_log() {
