@@ -311,6 +311,7 @@ apply_cleanup_from_log() {
       if rm -f -- "${PARSED_PATH}"; then
         deleted_entries=$((deleted_entries + 1))
         deleted_kb=$((deleted_kb + PARSED_SIZE_KB))
+        echo "Cleanup apply: removed file: ${PARSED_PATH} (${PARSED_SIZE_KB} KiB)"
       else
         failed_entries=$((failed_entries + 1))
         echo "Cleanup apply: failed to remove file: ${PARSED_PATH}"
