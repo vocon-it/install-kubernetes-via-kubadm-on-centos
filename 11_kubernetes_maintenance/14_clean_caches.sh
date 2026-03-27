@@ -176,10 +176,11 @@ calculate_cleanup_size_from_log() {
     TOTAL_KB=$(awk '{sum+=$1} END {print sum}' "${cleanup_log_file}")
     if [ -n "${TOTAL_KB}" ] && [ "${TOTAL_KB}" -gt 0 ] 2>/dev/null; then
       TOTAL_MIB=$((TOTAL_KB / 1024))
+      TOTAL_GIB=$((TOTAL_MIB / 1024))
       if [ "${cleanup_dry_run_local}" = "false" ]; then
-        echo "Cleanup summary: freed approximately ${TOTAL_MIB} MiB (${TOTAL_KB} KiB) of disk space. Details in ${cleanup_log_file}."
+        echo "Cleanup summary: freed approximately ${TOTAL_GIB} GiB (${TOTAL_MIB} MiB or ${TOTAL_KB} KiB) of disk space. Details in ${cleanup_log_file}."
       else
-        echo "Cleanup summary (dry run): would free approximately ${TOTAL_MIB} MiB (${TOTAL_KB} KiB) of disk space. Details in ${cleanup_log_file}."
+        echo "Cleanup summary (dry run): would free  ${TOTAL_GIB} GiB (${TOTAL_MIB} MiB or ${TOTAL_KB} KiB) of disk space. Details in ${cleanup_log_file}."
       fi
     else
       echo "Cleanup summary: no size information could be calculated from ${cleanup_log_file}."
