@@ -154,6 +154,41 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
 
+  # Weave overlay health: every peer connection must be "established fastdp".
+  # Catches sleeve (degraded UDP fallback), failed/"connection refused" (down),
+  # missing peers, and a dead local weave pod -> all break cross-node pod traffic
+  # and surface as cloud${FQDN_SNIPPET}vocon-it.com 500s on session spin-up.
+  WEAVE_POD=$(kubectl -n kube-system get pod -l name=weave-net --field-selector spec.nodeName=$(hostname) -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+  WEAVE_CONN=$(kubectl -n kube-system exec "$WEAVE_POD" -c weave -- /home/weave/weave --local status connections 2>/dev/null)
+  WEAVE_EXPECTED=$(( $(kubectl get nodes --no-headers 2>/dev/null | wc -l) - 1 ))
+  WEAVE_FASTDP=$(echo "$WEAVE_CONN" | grep -c 'established fastdp')
+  WEAVE_BAD=$(echo "$WEAVE_CONN" | egrep '(->|<-)' | egrep -v 'established fastdp')
+  if [ -n "$WEAVE_BAD" ] || [ "$WEAVE_FASTDP" -lt "$WEAVE_EXPECTED" ]; then
+  OUT="$OUT
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!! FATAL ERROR: Weave overlay DEGRADED on $(hostname)! Expected ${WEAVE_EXPECTED} 'established fastdp' peer(s), found ${WEAVE_FASTDP}.
+!!!!!!!!!!!!! Cross-node pod traffic is likely broken -> session spin-up 500s. Do NOT uncordon affected node until fastdp returns.
+!!!!!!!!!!!!! weave --local status connections:
+$(echo "${WEAVE_CONN:-<no connections / local weave pod unreachable>}" | sed 's/^/!!!!!!!!!!!!! /')
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"
+  fi
+
+  # Node metrics health: a node reporting <unknown> in 'kubectl top nodes' means
+  # metrics-server cannot scrape its kubelet (:10250) -> get-desktop's capacity
+  # check sees it as zero-resource -> "no available resources to fulfill your
+  # memory request reservation" 500s. Root cause is usually a crash-looping kubelet
+  # (check: journalctl -u kubelet for a corrupt pod_status_manager_state panic).
+  NODES_NO_METRICS=$(kubectl top nodes --use-protocol-buffers 2>/dev/null | egrep '<unknown>' | awk '{print $1}')
+  if [ -n "$NODES_NO_METRICS" ]; then
+  OUT="$OUT
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!! FATAL ERROR: node(s) with NO metrics (<unknown> in kubectl top): $(echo $NODES_NO_METRICS | tr '\n' ' ')
+!!!!!!!!!!!!! kubelet :10250 unreachable -> 'no available resources' 500s. Check 'journalctl -u kubelet' on the node.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"
+  fi
+
   OUT="$OUT
 Letsencrypt (https) expire dates on ${MONITORING_ENVIRONMENT}:
 $(curl https://cloud${FQDN_SNIPPET}vocon-it.com -vI 2>&1 | grep "expire date:" | sed 's/expire date:/intellij-frontend expire date:/')
