@@ -158,12 +158,20 @@ Number of available Volumes on the current host: $(find-available-volumes-of-the
   # Catches sleeve (degraded UDP fallback), failed/"connection refused" (down),
   # missing peers, and a dead local weave pod -> all break cross-node pod traffic
   # and surface as cloud${FQDN_SNIPPET}vocon-it.com 500s on session spin-up.
-  WEAVE_POD=$(kubectl -n kube-system get pod -l name=weave-net --field-selector spec.nodeName=$(hostname) -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-  WEAVE_CONN=$(kubectl -n kube-system exec "$WEAVE_POD" -c weave -- /home/weave/weave --local status connections 2>/dev/null)
-  WEAVE_EXPECTED=$(( $(kubectl get nodes --no-headers 2>/dev/null | wc -l) - 1 ))
-  WEAVE_FASTDP=$(echo "$WEAVE_CONN" | grep -c 'established fastdp')
-  WEAVE_BAD=$(echo "$WEAVE_CONN" | egrep '(->|<-)' | egrep -v 'established fastdp')
-  if [ -n "$WEAVE_BAD" ] || [ "$WEAVE_FASTDP" -lt "$WEAVE_EXPECTED" ]; then
+  # Only relevant where Weave is installed: if there is no weave-net DaemonSet
+  # (e.g. the Singapore cluster uses a different CNI), WEAVE_INSTALLED stays "no"
+  # and the alarm never fires. The alarm fires only when Weave IS installed but
+  # NOT functional.
+  WEAVE_INSTALLED=no; WEAVE_CONN=""; WEAVE_BAD=""; WEAVE_FASTDP=0; WEAVE_EXPECTED=0
+  if kubectl -n kube-system get ds weave-net >/dev/null 2>&1; then
+    WEAVE_INSTALLED=yes
+    WEAVE_POD=$(kubectl -n kube-system get pod -l name=weave-net --field-selector spec.nodeName=$(hostname) -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    WEAVE_CONN=$(kubectl -n kube-system exec "$WEAVE_POD" -c weave -- /home/weave/weave --local status connections 2>/dev/null)
+    WEAVE_EXPECTED=$(( $(kubectl get nodes --no-headers 2>/dev/null | wc -l) - 1 ))
+    WEAVE_FASTDP=$(echo "$WEAVE_CONN" | grep -c 'established fastdp')
+    WEAVE_BAD=$(echo "$WEAVE_CONN" | egrep '(->|<-)' | egrep -v 'established fastdp')
+  fi
+  if [ "$WEAVE_INSTALLED" == "yes" ] && { [ -n "$WEAVE_BAD" ] || [ "$WEAVE_FASTDP" -lt "$WEAVE_EXPECTED" ]; }; then
   OUT="$OUT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!! FATAL ERROR: Weave overlay DEGRADED on $(hostname)! Expected ${WEAVE_EXPECTED} 'established fastdp' peer(s), found ${WEAVE_FASTDP}.
