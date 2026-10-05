@@ -1,3 +1,54 @@
+#
+# CAAS-2114: clean regenerable caches (cache dirs, partial downloads, big core dumps) out of the
+# shared Hetzner Storage Box tree at
+# /mnt/u380503.your-storagebox.de/user-specific-shared-volumes.
+#
+# RENAMED. This file used to be 14_clean_caches.sh. The plain name stopped being accurate once
+# the same engine grew a second target: it cleans the STORAGE BOX, and nothing else - not the
+# node-local SSD, not container-local disk. The name now says so.
+#
+# ##########################################################################################
+# PORTED TO install-kubernetes-via-kubadm-on-ubuntu - THAT IS WHERE THIS CODE IS MAINTAINED
+# ##########################################################################################
+#
+# Helsinki (Ubuntu) is the live cluster; this CentOS repo is the EOL Nuremberg one. The code
+# below was carried across into the Ubuntu repo and SPLIT IN TWO along the axis this script
+# never separated - the storage medium:
+#
+#   ../install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/5_clean_caches_ssd.sh
+#       Node-local SSD (local volumes, /mnt/disk/vol<N>/<namespace>). Ticket CAAS-2344.
+#       Holds the shared engine: run_cleanup_scan -> scan_home_for_caches,
+#       apply_cleanup_from_log, parse_cleanup_log_line, path_is_within_cleaned_drives and
+#       calculate_cleanup_size_from_log all came from here, close to verbatim, including the
+#       find match patterns.
+#
+#   ../install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/6_clean_caches_storagebox.sh
+#       THE DIRECT COUNTERPART OF THIS FILE: same DRIVES_TO_BE_CLEANED, same storage box, same
+#       purpose. It SOURCES 5_clean_caches_ssd.sh for the engine rather than copying it, so the
+#       two media cannot drift apart the way they would have if this file had simply been
+#       duplicated.
+#
+# What deliberately did NOT come across, and why (the detail lives in the Ubuntu files' own
+# headers - read those before changing anything here):
+#
+#   * The EXCLUDED_USER_ID_PATTERN block at the bottom of MAIN. Building the live-user list by
+#     `kubectl exec deploy/intellij-desktop -- bash -c 'echo $USER_ID'` is image-specific (a
+#     running Jupyter or Blender session is invisible to it), costs one exec per pod, and FAILS
+#     OPEN: when an exec fails, that user silently drops out of the protection regex and their
+#     data is cleaned anyway. The Ubuntu port replaces it with the admin records idle-timeout
+#     writes to the box (user_id + last_active_secs per namespace) plus a running-pod check, and
+#     fails CLOSED when kubectl cannot be reached at all.
+#   * TMP_DIR on the storage box. Every matched path costs a `tee -a` round trip across a ~25-34ms
+#     CIFS link; the Ubuntu ports keep their logs on local disk (see CAAS-2349 for what per-file
+#     latency does to work of this shape).
+#   * The two-phase log dance (run_cleanup_scan writes ..._du_latest.log, build_to_be_cleaned_log
+#     filters it, apply_cleanup_from_log consumes it). The Ubuntu ports scan straight into one
+#     log and apply from it, because the filtering step existed only to subtract the
+#     exec-derived user list that no longer exists.
+#
+# TREAT THIS FILE AS FROZEN REFERENCE. Fixes belong in the Ubuntu pair above; changing them
+# here only reaches a cluster that is being decommissioned.
+#
 DRIVES_TO_BE_CLEANED="/mnt/u380503.your-storagebox.de/user-specific-shared-volumes"
 CLEANUP_DRY_RUN=${CLEANUP_DRY_RUN:="true"}
 UPDATE_CLEANUP_DU_LOG_LATEST=${UPDATE_CLEANUP_DU_LOG_LATEST:="true"}

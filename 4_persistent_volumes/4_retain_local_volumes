@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# This script went never productive and is kept for reference only.
+
+echo "This script was never fully tested and went never productive and is kept for reference only."
+echo "Use the following scripts instead:"
+echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/5_clean_local_volume_caches.sh instead."
+echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/6_clean_caches_storagebox.sh instead."
+exit 1
+
 [ "${REPAIR}" != "" ] && DRY_RUN=${DRY_RUN:=true} && DEBUG=true && DATE_RELATIVE="0 days ago"
 DATE_RELATIVE="${DATE_RELATIVE:="42 days ago"}"
 DELETE_PV=${DELETE_PV:=false}
