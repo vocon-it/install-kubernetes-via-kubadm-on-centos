@@ -1,7 +1,7 @@
 echo "This script was never fully tested and went never productive and is kept for reference only."
 echo "Use the following scripts instead:"
-echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/5_clean_local_volume_caches.sh instead."
-echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/6_clean_caches_storagebox.sh instead."
+echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/5_clean_local_volume_caches.sh"
+echo "- install-kubernetes-via-kubadm-on-ubuntu/4_persistent_volumes/6_clean_caches_storagebox.sh"
 exit 1
 
 #
