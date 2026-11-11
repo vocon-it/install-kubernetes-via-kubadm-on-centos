@@ -87,10 +87,23 @@ while true; do
 #############################################################################
 "
   LOGS="$(kubectl -n get-desktop get pod -o json 2>/dev/null | jq -r .items[].metadata.name | xargs -l kubectl -n get-desktop logs 2>/dev/null)"
-  UNAUTHORIZED_RESPONSES=$(echo "${LOGS}" | grep Writing | grep error=Unauthorized | wc -l)
-  COMPLETED_OK=$(echo "${LOGS}" | grep Writing | grep url | wc -l)
-  NOT_FOUND_RESPONSES=$(echo "${LOGS}" | grep '404 NOT_FOUND' | wc -l)
-  TOTAL_RESPONSES=$(( $(echo "${LOGS}" | grep Writing | grep -v memory | wc -l) + $NOT_FOUND_RESPONSES ))
+  # Desktop starts (GET /protected/developersCloudDesktop) by HTTP status, from the Tomcat access log (CAAS-2606):
+  #   <date> <time> ||  INFO < tomcat.access                       > <status> <method> <path> <duration>ms
+  DESKTOP_STARTS="$(echo "${LOGS}" | grep '< tomcat.access ' | awk '$(NF-1) == "/protected/developersCloudDesktop" { print $(NF-3) }')"
+  if [ -n "${DESKTOP_STARTS}" ]; then
+    STATISTICS_SOURCE="tomcat.access log"
+    COMPLETED_OK=$(echo "${DESKTOP_STARTS}" | grep -c '^200$')
+    UNAUTHORIZED_RESPONSES=$(echo "${DESKTOP_STARTS}" | grep -c '^401$')
+    NOT_FOUND_RESPONSES=$(echo "${DESKTOP_STARTS}" | grep -c '^404$')
+    TOTAL_RESPONSES=$(echo "${DESKTOP_STARTS}" | wc -l)
+  else
+    # Fallback for get-desktop images without the access log: Spring web DEBUG lines (off since CAAS-2449).
+    STATISTICS_SOURCE="Spring web DEBUG log"
+    UNAUTHORIZED_RESPONSES=$(echo "${LOGS}" | grep Writing | grep error=Unauthorized | wc -l)
+    COMPLETED_OK=$(echo "${LOGS}" | grep Writing | grep url | wc -l)
+    NOT_FOUND_RESPONSES=$(echo "${LOGS}" | grep '404 NOT_FOUND' | wc -l)
+    TOTAL_RESPONSES=$(( $(echo "${LOGS}" | grep Writing | grep -v memory | wc -l) + $NOT_FOUND_RESPONSES ))
+  fi
 
   OUT="$OUT
 Free Mem of node: $(free -h | egrep '^Mem:' | awk '{print $7}')
@@ -116,7 +129,7 @@ $(ktop cpu intellij-desktop 2>/dev/null)
 "
 
   OUT="$OUT
-Statistics:
+Statistics (desktop starts, from ${STATISTICS_SOURCE}):
 200 OK: $COMPLETED_OK/$TOTAL_RESPONSES
 401 Unauthorized: $UNAUTHORIZED_RESPONSES/$TOTAL_RESPONSES
 404 Not Found: $NOT_FOUND_RESPONSES/$TOTAL_RESPONSES
